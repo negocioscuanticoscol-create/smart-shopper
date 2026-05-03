@@ -281,7 +281,7 @@ let autoRefreshTimer=null;
 
 // ── CONFIG ────────────────────────────────────
 function loadConfig(){
-  WEBHOOK=localStorage.getItem('ss_webhook')||'';
+  WEBHOOK=localStorage.getItem('ss_webhook')||'https://script.google.com/macros/s/AKfycbyKvSShMKj3LaXmkJo7HNwAta5UIWce87r9SzkePet74wnXNfZsLonb1FETXTxsl5cQ/exec';
   const wi=$('cfg-webhook');if(wi)wi.value=WEBHOOK;
 }
 function guardarConfig(){
