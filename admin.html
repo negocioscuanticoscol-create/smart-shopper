@@ -135,7 +135,8 @@ button{cursor:pointer}
 </div>
 
 <div class="tab-bar" style="overflow-x:auto;scrollbar-width:none">
-  <button class="tab on" onclick="setTab('pedidos')" id="tab-pedidos" style="flex-shrink:0">📋 Pedidos</button>
+  <button class="tab on" onclick="setTab('suscripciones')" id="tab-suscripciones" style="flex-shrink:0;color:#1565c0;border-bottom-color:#1565c0">💳 Suscripciones</button>
+  <button class="tab" onclick="setTab('pedidos')" id="tab-pedidos" style="flex-shrink:0">📋 Pedidos</button>
   <button class="tab" onclick="setTab('entrega')" id="tab-entrega" style="flex-shrink:0">🚚 Entrega</button>
   <button class="tab" onclick="setTab('ventas')" id="tab-ventas" style="flex-shrink:0">💰 Ventas</button>
   <button class="tab" onclick="setTab('analisis')" id="tab-analisis" style="flex-shrink:0">📊 Análisis</button>
@@ -143,8 +144,67 @@ button{cursor:pointer}
   <button class="tab" onclick="setTab('config')" id="tab-config" style="flex-shrink:0">⚙️ Config</button>
 </div>
 
+<!-- SUSCRIPCIONES -->
+<div id="view-suscripciones" class="content">
+
+  <!-- ACTIVAR NUEVA SUSCRIPCIÓN -->
+  <div class="sec" style="border:2px solid #1565c0;background:#e3f2fd">
+    <div class="sec-title" style="color:#0d47a1;font-size:15px">💳 Activar suscripción — Pago recibido</div>
+    <p style="font-size:13px;color:#1565c0;margin-bottom:12px">Cuando el cliente envía el comprobante de pago, actívalo aquí</p>
+
+    <div class="field" style="margin-bottom:10px">
+      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:4px">📱 Celular del cliente *</label>
+      <input class="inp" id="sus-cel" type="tel" placeholder="Ej: 3001234567" inputmode="numeric">
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:4px">👤 Nombre del cliente *</label>
+      <input class="inp" id="sus-nombre" type="text" placeholder="Nombre completo">
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:8px">📦 Plan contratado *</label>
+      <div id="plan-selector" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
+        ${[
+          {id:'unica',  label:'Solo 1 vez', precio:'$20.000',  envios:1},
+          {id:'mes1',   label:'1 mes',      precio:'$60.000',  envios:4},
+          {id:'mes2',   label:'2 meses',    precio:'$100.000', envios:8},
+          {id:'mes3',   label:'3 meses',    precio:'$135.000', envios:13},
+          {id:'mes6',   label:'6 meses',    precio:'$240.000', envios:27},
+          {id:'ano1',   label:'1 año',      precio:'$360.000', envios:54}
+        ].map(p=>`
+          <div onclick="selPlanAdmin('${p.id}',${p.envios},'${p.precio}')" id="pla-${p.id}"
+            style="border:2px solid #bbdefb;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;background:white;transition:all .15s">
+            <div style="font-weight:700;font-size:12px;color:#0d47a1">${p.label}</div>
+            <div style="font-size:14px;font-weight:800;color:#1b4332">${p.precio}</div>
+            <div style="font-size:10px;color:#7a9e7e">${p.envios} envío${p.envios>1?'s':''}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div style="background:white;border-radius:10px;padding:12px;margin-bottom:12px;border:1.5px solid #bbdefb">
+      <div style="font-size:12px;color:#1565c0;font-weight:700;margin-bottom:4px">Resumen a activar:</div>
+      <div id="sus-resumen" style="font-size:13px;color:#333">Selecciona un plan arriba</div>
+    </div>
+
+    <button class="btn" onclick="activarSuscripcion()"
+      style="background:linear-gradient(135deg,#1565c0,#1976d2);color:white;font-size:15px;font-weight:800;padding:15px">
+      ✅ Activar suscripción
+    </button>
+  </div>
+
+  <!-- LISTADO DE SUSCRITOS -->
+  <div class="sec" style="margin-top:12px">
+    <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>📋 Clientes suscritos</span>
+      <button class="btn-sm" onclick="cargarListaSus()" style="background:var(--gp);color:var(--gd);border:none">🔄</button>
+    </div>
+    <div id="sus-lista"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+
+</div>
+
 <!-- PEDIDOS -->
-<div id="view-pedidos" class="content">
+<div id="view-pedidos" class="content" style="display:none">
   <div class="filter-bar">
     <button class="fpill on" onclick="setFiltro('todos',this)">Todos</button>
     <button class="fpill" onclick="setFiltro('Lista de compra',this)">⚪ Lista de compra</button>
@@ -281,7 +341,7 @@ let autoRefreshTimer=null;
 
 // ── CONFIG ────────────────────────────────────
 function loadConfig(){
-  WEBHOOK=localStorage.getItem('ss_webhook')||'https://script.google.com/macros/s/AKfycbyKvSShMKj3LaXmkJo7HNwAta5UIWce87r9SzkePet74wnXNfZsLonb1FETXTxsl5cQ/exec';
+  WEBHOOK=localStorage.getItem('ss_webhook')||'https://script.google.com/macros/s/AKfycbxFfEzCCcODwrV8rizmdyBLOV-WUALxwVdLNe9i7pRSG_xunNx-Dq0cZS5_LubDhIID/exec';
   const wi=$('cfg-webhook');if(wi)wi.value=WEBHOOK;
 }
 function guardarConfig(){
@@ -293,14 +353,102 @@ const $=id=>document.getElementById(id);
 
 // ── TABS ──────────────────────────────────────
 function setTab(t){
-  ['pedidos','entrega','ventas','analisis','catalogo','config'].forEach(id=>{
-    $('view-'+id).style.display=id===t?'block':'none';
-    $('tab-'+id).classList.toggle('on',id===t);
+  ['suscripciones','pedidos','entrega','ventas','analisis','catalogo','config'].forEach(id=>{
+    const v=document.getElementById('view-'+id);
+    const tb=document.getElementById('tab-'+id);
+    if(v)v.style.display=id===t?'block':'none';
+    if(tb)tb.classList.toggle('on',id===t);
   });
+  if(t==='pedidos')cargarPedidos();
   if(t==='entrega')renderEntrega();
   if(t==='ventas')cargarVentas();
   if(t==='analisis')cargarAnalisis();
   if(t==='catalogo')cargarCatalogo();
+  if(t==='suscripciones')cargarListaSus();
+}
+
+// ── SUSCRIPCIONES ─────────────────────────────
+const PLANES_ADMIN=[
+  {id:'unica',label:'Solo 1 vez',precio:20000,meses:0,envios:1},
+  {id:'mes1', label:'1 mes',     precio:60000, meses:1,envios:4},
+  {id:'mes2', label:'2 meses',   precio:100000,meses:2,envios:8},
+  {id:'mes3', label:'3 meses',   precio:135000,meses:3,envios:13},
+  {id:'mes6', label:'6 meses',   precio:240000,meses:6,envios:27},
+  {id:'ano1', label:'1 año',     precio:360000,meses:12,envios:54}
+];
+let planSelAdmin=null;
+
+function selPlanAdmin(id,envios,precio){
+  planSelAdmin={id,envios,precio};
+  document.querySelectorAll('[id^="pla-"]').forEach(el=>{
+    el.style.borderColor=el.id==='pla-'+id?'#1565c0':'#bbdefb';
+    el.style.background=el.id==='pla-'+id?'#e3f2fd':'white';
+  });
+  const p=PLANES_ADMIN.find(x=>x.id===id);
+  const res=document.getElementById('sus-resumen');
+  if(res&&p)res.innerHTML=`<strong>${p.label}</strong> — ${precio} — <strong>${envios} envío${envios>1?'s':''}</strong>`;
+}
+
+async function activarSuscripcion(){
+  const cel=document.getElementById('sus-cel')?.value.trim().replace(/\D/g,'');
+  const nombre=document.getElementById('sus-nombre')?.value.trim();
+  if(!cel||cel.length<7){alert('Ingresa el celular del cliente');return;}
+  if(!nombre){alert('Ingresa el nombre del cliente');return;}
+  if(!planSelAdmin){alert('Selecciona un plan');return;}
+  const p=PLANES_ADMIN.find(x=>x.id===planSelAdmin.id);
+  if(!WEBHOOK){
+    alert(`✅ (Demo) Activados ${p.envios} domicilios para ${nombre} — ${cel}\nConfigura el webhook para sincronizar con Sheets.`);
+    return;
+  }
+  try{
+    const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        accion:'suscripcion',
+        celular:cel,nombre,
+        plan:p.label,valor:p.precio,
+        envios:p.envios,meses:p.meses,
+        fechaPago:new Date().toISOString()
+      })});
+    const d=await r.json();
+    if(d.ok){
+      alert(`✅ ¡Activado!\n👤 ${nombre} — ${cel}\n📦 Plan: ${p.label}\n🚚 ${p.envios} domicilios disponibles`);
+      document.getElementById('sus-cel').value='';
+      document.getElementById('sus-nombre').value='';
+      planSelAdmin=null;
+      document.querySelectorAll('[id^="pla-"]').forEach(el=>{el.style.borderColor='#bbdefb';el.style.background='white';});
+      document.getElementById('sus-resumen').textContent='Selecciona un plan arriba';
+      cargarListaSus();
+    }else{alert('Error: '+(d.error||'desconocido'));}
+  }catch(err){alert('Error de conexión: '+err.message);}
+}
+
+async function cargarListaSus(){
+  const lista=document.getElementById('sus-lista');if(!lista)return;
+  if(!WEBHOOK){
+    lista.innerHTML=`<div style="text-align:center;padding:16px;color:var(--tl);font-size:13px">
+      Configura el webhook para ver los suscritos.<br>
+      <small>⚙️ Config → pega la URL del Apps Script</small></div>`;
+    return;
+  }
+  lista.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try{
+    const r=await fetch(WEBHOOK+'?accion=suscripciones');
+    const d=await r.json();
+    const subs=d.suscripciones||[];
+    if(!subs.length){lista.innerHTML='<div class="empty">Sin suscripciones aún</div>';return;}
+    lista.innerHTML=subs.map(s=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gp)">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px">${s.nombre}</div>
+          <div style="font-size:12px;color:var(--tm)">📱 ${s.celular} · ${s.plan||'—'}</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:18px;font-weight:800;color:${Number(s.domRestantes)>0?'var(--gl)':'#e57373'}">${s.domRestantes||0}</div>
+          <div style="font-size:10px;color:var(--tl)">envíos</div>
+        </div>
+        <span style="background:${s.estado==='Activo'?'var(--gp)':'#fce4ec'};color:${s.estado==='Activo'?'var(--gd)':'#c62828'};padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700">${s.estado||'Activo'}</span>
+      </div>`).join('');
+  }catch(e){lista.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
 
 // ── FILTRO ────────────────────────────────────
@@ -767,7 +915,7 @@ function startAutoRefresh(){
 }
 
 loadConfig();
-cargarPedidos();
+cargarListaSus();
 startAutoRefresh();
 </script>
 </body>
