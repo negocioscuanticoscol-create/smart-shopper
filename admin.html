@@ -252,8 +252,9 @@ button{cursor:pointer}
 <!-- PEDIDOS -->
 <div id="view-pedidos" class="content" style="display:none">
   <div class="filter-bar">
-    <button class="fpill on" onclick="setFiltro('todos',this)">Todos</button>
-    <button class="fpill" onclick="setFiltro('Lista de compra',this)">⚪ Lista de compra</button>
+    <button class="fpill on" onclick="setFiltro('activos',this)">🟢 Activos</button>
+    <button class="fpill" onclick="setFiltro('todos',this)">Todos</button>
+    <button class="fpill" onclick="setFiltro('Lista de compra',this)">⚪ Lista</button>
     <button class="fpill" onclick="setFiltro('Por consignación',this)">🟡 Por consig.</button>
     <button class="fpill" onclick="setFiltro('Pagado',this)">🟢 Pagado</button>
     <button class="fpill" onclick="setFiltro('Empacado',this)">🔵 Empacado</button>
@@ -382,7 +383,7 @@ button{cursor:pointer}
 
 <script>
 let WEBHOOK='', WA_NEG='573124124034';
-let pedidos=[], filtro='todos', pActual=null, checked={}, yapaChecked={};
+let pedidos=[], filtro='activos', pActual=null, checked={}, yapaChecked={};
 let autoRefreshTimer=null;
 
 // ── CONFIG ────────────────────────────────────
@@ -619,7 +620,12 @@ async function cargarPedidos(){
 // ── LISTA (agrupada por localidad) ────────────
 function renderLista(){
   const lista=$('lista-pedidos');
-  const filtrados=pedidos.filter(p=>filtro==='todos'||p.estado===filtro);
+  const ESTADOS_ACTIVOS=['Lista de compra','Por consignación','Pagado','Empacado'];
+  const filtrados=pedidos.filter(p=>{
+    if(filtro==='activos') return ESTADOS_ACTIVOS.includes(p.estado);
+    if(filtro==='todos') return true;
+    return p.estado===filtro;
+  });
   if(!filtrados.length){lista.innerHTML='<div class="empty">No hay pedidos en esta categoría</div>';return;}
 
   // Agrupar por localidad
