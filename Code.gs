@@ -102,7 +102,13 @@ function crearPedidos(ss) {
 }
 function normProds(raw) {
   const r = String(raw||'');
-  // Limpiar ~~ si viene del formato antiguo
+  // Formato nuevo: producto::cantidad::unidad;;;producto2::cantidad2::unidad2
+  if(r.indexOf(';;;')>-1)
+    return r.split(';;;').map(p=>{
+      const parts=p.split('::');
+      return parts.length>=3 ? parts[0]+': '+parts[1]+' '+parts[2] : p;
+    }).join(' | ');
+  // Formato ~~
   if(r.indexOf('~~')>-1)
     return r.split('~~').map(p=>{
       const i=p.indexOf(':');
