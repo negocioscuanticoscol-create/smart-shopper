@@ -622,15 +622,11 @@ function bindE(){
     // Consultar Sheet para domicilios actualizados
     if(WEBHOOK){
       try{
-        const r=await fetch(WEBHOOK+'?accion=clientes');
+        const r=await fetch(`${WEBHOOK}?accion=verificar&celular=${p}`);
         const d=await r.json();
-        const found=(d.clientes||[]).find(c=>String(c.celular)===String(p));
-        if(found&&S.customers[p]){
-          S.customers[p].deliveries=Number(found.domicilios)||0;
-          await save(S.customers);
-        } else if(found&&!S.customers[p]){
-          // Cliente existe en Sheet pero no localmente → crearlo
-          S.customers[p]={phone:p,name:found.nombre||'',address:'',orders:[],deliveries:Number(found.domicilios)||0};
+        if(d.encontrado){
+          if(!S.customers[p])S.customers[p]={phone:p,name:d.nombre||'',address:'',orders:[],deliveries:0};
+          S.customers[p].deliveries=Number(d.domicilios)||0;
           await save(S.customers);
         }
       }catch(e){}
@@ -672,18 +668,15 @@ function bindE(){
     if(!S.client){S.client={phone:S.phone,name:d.nombre,orders:[],deliveries:0};}
     S.client.lastDelivery={...d};S.client.name=d.nombre;
     S.customers[S.phone]=S.client;await save(S.customers);
-    // Si tiene domicilios disponibles → catálogo directo
-    // Primero consulta el Sheet para obtener domicilios actualizados
+    // Consultar Sheet para domicilios actualizados (endpoint directo por celular)
     if(WEBHOOK){
       try{
-        const r=await fetch(WEBHOOK+'?accion=clientes');
+        const r=await fetch(`${WEBHOOK}?accion=verificar&celular=${S.phone}`);
         const d=await r.json();
-        const found=(d.clientes||[]).find(c=>String(c.celular)===String(S.phone));
-        if(found){
-          S.client.deliveries=Number(found.domicilios)||0;
-          S.customers[S.phone]=S.client;
-          await save(S.customers);
-        }
+        if(!S.client){S.client={phone:S.phone,name:d.nombre||'',address:'',orders:[],deliveries:0};}
+        S.client.deliveries=Number(d.domicilios)||0;
+        S.customers[S.phone]=S.client;
+        await save(S.customers);
       }catch(e){}
     }
     if(hasDeliveries()){S.screen='order';}
