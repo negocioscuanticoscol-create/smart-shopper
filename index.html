@@ -737,58 +737,63 @@ function bindE(){
   if(bc)bc.onclick=async()=>{
     if(S.sending)return;
     S.sending=true;
-    // Mostrar "enviando" visualmente
     bc.textContent='⏳ Procesando...';
     bc.disabled=true;
+
+    // Capturar TODOS los datos ANTES de cualquier cambio de estado
+    const orderCode=gc();
+    S.code=orderCode;
+    const snapItems=ci().map(([p,{qty,unit}])=>({product:p,qty,unit}));
+    const snapDel={...S.del};
+    const snapPhone=S.client?.phone||S.phone||'';
+    const snapDeliveries=(S.client?.deliveries||0)>0?(S.client.deliveries-1):0;
+
+    // Guardar localmente
     try{
-      S.code=gc();
-      const items=ci().map(([p,{qty,unit}])=>({product:p,qty,unit}));
-      const order={date:new Date().toISOString(),code:S.code,items,delivery:{...S.del}};
+      const order={date:new Date().toISOString(),code:orderCode,items:snapItems,delivery:snapDel};
       if(S.client){
         S.client.orders=[...(S.client.orders||[]),order];
-        S.client.lastDelivery={...S.del};
-        if((S.client.deliveries||0)>0)S.client.deliveries--;
-        S.customers[S.client.phone]=S.client;
+        S.client.lastDelivery=snapDel;
+        S.client.deliveries=snapDeliveries;
+        S.customers[snapPhone]=S.client;
       }
       try{await save(S.customers);}catch(e){}
     }catch(e){}
-    // SIEMPRE avanzar a éxito
+
+    // Avanzar a éxito INMEDIATAMENTE
     S.sending=false;
     S.screen='success';
     render();
-    // Enviar al Sheet en background — no bloquea jamás
-    setTimeout(()=>{
-      try{
-        if(!WEBHOOK||!S.code)return;
-        const savedItems=S.client?.orders?.slice(-1)[0]?.items||[];
-        const d=S.del||{};
-        // Cada producto como parámetro separado p0,q0,u0 p1,q1,u1...
+
+    // Enviar al Sheet con los datos capturados antes del render
+    try{
+      if(WEBHOOK && snapItems.length>0){
         let prodParams='';
-        savedItems.forEach((it,i)=>{
+        snapItems.forEach((it,i)=>{
           prodParams+='&p'+i+'='+encodeURIComponent(it.product||'')
                      +'&q'+i+'='+encodeURIComponent(String(it.qty||''))
                      +'&u'+i+'='+encodeURIComponent(it.unit||'');
         });
         const url=WEBHOOK
           +'?accion=nuevoPedido'
-          +'&codigo='+encodeURIComponent(S.code)
-          +'&nombre='+encodeURIComponent(d.nombre||'')
-          +'&celular='+encodeURIComponent(S.client?.phone||S.phone||'')
-          +'&localidad='+encodeURIComponent(d.localidad||'')
-          +'&barrio='+encodeURIComponent(d.barrio||'')
-          +'&direccion='+encodeURIComponent(d.dir||'')
-          +'&apto='+encodeURIComponent(d.apto||'')
-          +'&referencia='+encodeURIComponent(d.ref||'')
-          +'&horario='+encodeURIComponent(d.horario||'')
-          +'&nota='+encodeURIComponent(d.nota||S.note||'')
-          +'&total_items='+savedItems.length
-          +'&domicilios_restantes='+(S.client?.deliveries||0)
+          +'&codigo='+encodeURIComponent(orderCode)
+          +'&nombre='+encodeURIComponent(snapDel.nombre||'')
+          +'&celular='+encodeURIComponent(snapPhone)
+          +'&localidad='+encodeURIComponent(snapDel.localidad||'')
+          +'&barrio='+encodeURIComponent(snapDel.barrio||'')
+          +'&direccion='+encodeURIComponent(snapDel.dir||'')
+          +'&apto='+encodeURIComponent(snapDel.apto||'')
+          +'&referencia='+encodeURIComponent(snapDel.ref||'')
+          +'&horario='+encodeURIComponent(snapDel.horario||'')
+          +'&nota='+encodeURIComponent(snapDel.nota||'')
+          +'&total_items='+snapItems.length
+          +'&domicilios_restantes='+snapDeliveries
           +'&timestamp='+encodeURIComponent(new Date().toISOString())
           +prodParams;
         const img=new Image();
         img.src=url;
-      }catch(e){}
-    },500);
+      }
+    }catch(e){}
   };
 
   // Success — seguir comprando siempre funciona
