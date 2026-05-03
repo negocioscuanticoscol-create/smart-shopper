@@ -512,7 +512,7 @@ async function activarSuscripcion(){
 async function activarEnSheet(cel,nombre,plan){
   if(!WEBHOOK){alert(`✅ (Demo) ${plan.envios} domicilios para ${nombre} — ${cel}`);return true;}
   try{
-    const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({accion:'suscripcion',celular:cel,nombre,
         plan:plan.label,valor:plan.precio,envios:plan.envios,meses:plan.meses,
         fechaPago:new Date().toISOString()})});
@@ -857,7 +857,7 @@ async function guardarCambios(){
   if(idx>=0)pedidos[idx]={...pActual};
   if(WEBHOOK){
     try{
-      await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+      await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},
         body:JSON.stringify({accion:'actualizar',codigo:pActual.codigo,estado:pActual.estado,valor,yapa,celular:pActual.celular})});
     }catch(e){console.warn('Error sheets:',e);}
   }
@@ -870,7 +870,7 @@ async function activarDomicilios(){
   if(!cel||!cant){alert('Completa celular y cantidad');return;}
   if(!WEBHOOK){alert('Configura el webhook primero');return;}
   try{
-    await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+    await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({accion:'actualizar',codigo:'manual',estado:'Pagado',celular:cel,domicilios:Number(cant)})});
     alert(`✅ ${cant} domicilios activados para ${cel}`);
     $('dom-cel').value='';$('dom-cant').value='';
@@ -922,7 +922,7 @@ async function guardarComision(){
   const cod=$('com-codigo').value.trim(),val=$('com-valor').value.trim();
   if(!cod||!val){alert('Completa código y valor');return;}
   if(!WEBHOOK){alert('Configura el webhook');return;}
-  await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+  await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({accion:'actualizar',codigo:cod,comision:Number(val)})});
   alert('✅ Comisión guardada');
   $('com-codigo').value='';$('com-valor').value='';
@@ -999,7 +999,7 @@ async function agregarProducto(){
   if(!nombre){alert('Escribe el nombre del producto');return;}
   if(!WEBHOOK){alert('Configura el webhook. El producto se agrega en la pestaña Catálogo del Sheet.');return;}
   try{
-    await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+    await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},
       body:JSON.stringify({accion:'agregarProducto',nombre,categoria:cat,tipo:tipoNuevo})});
     alert(`✅ "${nombre}" agregado. Aparecerá en la app al recargar.`);
     $('cat-nombre').value='';
