@@ -1,421 +1,1038 @@
-// ═══════════════════════════════════════════════════════════
-// SMART SHOPPER — Apps Script v3.1 (con CORS)
-// ═══════════════════════════════════════════════════════════
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<meta name="theme-color" content="#1b4332">
+<title>Smart Shopper — Operaciones</title>
+<style>
+:root{
+  --gd:#1b4332;--gm:#2d6a4f;--gl:#40916c;--gp:#d8f3dc;--gs:#f0faf2;
+  --tx:#1a2e1a;--tm:#4a6741;--tl:#7a9e7e;--br:#c5e8c5;
+  --r:12px;--rs:8px;
+}
+/* ESTADOS — nueva paleta */
+.e-lista  { border-left-color:#bdbdbd!important; background:#fff!important; }
+.e-consignacion{ border-left-color:#f9a825!important; background:#fffde7!important; }
+.e-pagado      { border-left-color:#43a047!important; background:#f1f8e9!important; }
+.e-empacado       { border-left-color:#0288d1!important; background:#e1f5fe!important; }
+.e-entregado   { border-left-color:#8e24aa!important; background:#f3e5f5!important; }
 
-const SH = {
-  PEDIDOS:'Pedidos', CLIENTES:'Clientes', SUSCRIPCIONES:'Suscripciones',
-  VENTAS:'Ventas', ANALISIS:'Análisis de Productos', CATALOGO:'Catálogo'
-};
-const PC = {
-  FECHA:0,CODIGO:1,NOMBRE:2,CELULAR:3,LOCALIDAD:4,BARRIO:5,
-  DIRECCION:6,APTO:7,REFERENCIA:8,GPS:9,HORARIO:10,
-  PRODUCTOS:11,NOTA:12,ITEMS:13,ESTADO:14,VALOR:15,YAPA:16,DOM_REST:17,COMISION:18
-};
-const COLORES = {
-  'Lista de compra':'#ffffff','Por consignación':'#fff9c4',
-  'Pagado':'#c8e6c9','Empacado':'#b3e5fc','Entregado':'#e1bee7'
-};
+.pill-lista  { background:#f5f5f5;   color:#616161; }
+.pill-consignacion{ background:#fff8e1;   color:#f57f17; }
+.pill-pagado      { background:#e8f5e9;   color:#2e7d32; }
+.pill-empacado       { background:#e1f5fe;   color:#01579b; }
+.pill-entregado   { background:#f3e5f5;   color:#6a1b9a; }
 
-// ── CORS helper ────────────────────────────────
-function corsOut(obj) {
-  const out = ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-  return out;
-}
-function corsTxt(t) {
-  return ContentService.createTextOutput(t).setMimeType(ContentService.MimeType.TEXT);
-}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'SF Pro Display','Segoe UI',sans-serif;background:#f2f4f3;color:var(--tx);min-height:100vh}
+input,button,textarea,select{font-family:inherit}
+button{cursor:pointer}
 
-// ── doOptions — responde preflight CORS ────────
-function doOptions(e) {
-  return ContentService.createTextOutput('')
-    .setMimeType(ContentService.MimeType.TEXT);
-}
+.topbar{background:linear-gradient(135deg,var(--gd),var(--gm));color:white;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.topbar-title{font-size:16px;font-weight:800}
+.topbar-sub{font-size:11px;opacity:.75;margin-top:1px}
+.tab-bar{display:flex;background:white;border-bottom:2px solid var(--br);position:sticky;top:56px;z-index:99}
+.tab{flex:1;padding:11px 6px;text-align:center;font-size:13px;font-weight:600;color:var(--tl);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s}
+.tab.on{color:var(--gd);border-bottom-color:var(--gd)}
+.content{padding:12px}
 
-// ── doPost ─────────────────────────────────────
-function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    inicializarHojas(ss);
-    switch(data.accion) {
-      case 'actualizar':       actualizarPedido(ss, data);          break;
-      case 'suscripcion':      guardarSuscripcion(ss, data);        break;
-      case 'comision':         registrarComision(ss, data);         break;
-      case 'agregarProducto':  agregarProductoAlCatalogo(ss, data); break;
-      default:
-        escribirPedido(ss, data);
-        actualizarCliente(ss, data);
-        actualizarAnalisis(ss, data);
-    }
-    return corsOut({ ok: true });
-  } catch(err) {
-    return corsOut({ ok: false, error: err.message });
-  }
-}
+.order-card{border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:0 1px 8px rgba(0,0,0,.07);border-left:5px solid #ccc;cursor:pointer;transition:transform .15s}
+.order-card:active{transform:scale(.98)}
+.oc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
+.oc-name{font-weight:700;font-size:15px}
+.oc-code{font-size:11px;color:var(--tl);font-weight:600;margin-top:1px}
+.oc-dir{font-size:12px;color:var(--tm);margin-bottom:5px;line-height:1.4}
+.oc-loc{display:inline-block;background:var(--gp);color:var(--gd);border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700}
+.status-pill{border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;white-space:nowrap}
 
-// ── doGet ──────────────────────────────────────
-function doGet(e) {
-  const p = (e && e.parameter) ? e.parameter : {};
-  if (!p.accion) return corsTxt('Smart Shopper v3.1 OK');
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  inicializarHojas(ss);
-  switch(p.accion) {
-    case 'pedidos':       return corsOut({ pedidos:       getPedidos(ss, p.estado) });
-    case 'clientes':      return corsOut({ clientes:      getClientes(ss) });
-    case 'suscripciones': return corsOut({ suscripciones: getSuscripciones(ss) });
-    case 'ventas':        return corsOut({ ventas:        getVentas(ss) });
-    case 'analisis':      return corsOut({ analisis:      getAnalisis(ss) });
-    case 'catalogo':      return corsOut({ catalogo:      getCatalogo(ss) });
-    case 'verificar':     return corsOut(verificarCliente(ss, p.celular));
-    // ← Recibir pedido y suscripción por GET (evita CORS)
-    case 'nuevoPedido':
-      escribirPedido(ss, p);
-      actualizarCliente(ss, p);
-      actualizarAnalisis(ss, p);
-      return corsOut({ ok: true });
-    case 'nuevaSuscripcion':
-      guardarSuscripcion(ss, p);
-      return corsOut({ ok: true });
-    case 'actualizarPedido':
-      actualizarPedido(ss, p);
-      return corsOut({ ok: true });
-    default: return corsOut({ error: 'Acción desconocida' });
-  }
-}
+/* Panel deslizable */
+.panel{position:fixed;inset:0;background:#f2f4f3;z-index:200;overflow-y:auto;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1)}
+.panel.open{transform:translateX(0)}
+.panel-top{background:linear-gradient(135deg,var(--gd),var(--gm));color:white;padding:48px 18px 18px;position:sticky;top:0;z-index:10}
+.panel-close{position:absolute;top:12px;left:14px;background:rgba(255,255,255,.2);border:none;color:white;padding:6px 13px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer}
+.panel-body{padding:14px}
 
-// ── INICIALIZAR HOJAS ──────────────────────────
-function inicializarHojas(ss) {
-  crearPedidos(ss); crearClientes(ss); crearSuscripciones(ss);
-  crearVentas(ss); crearAnalisis(ss); crearCatalogo(ss);
-}
+.sec{background:white;border-radius:var(--r);padding:14px;margin-bottom:11px;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.sec-title{font-size:13px;font-weight:700;color:var(--gd);margin-bottom:10px}
 
-// ── PEDIDOS ────────────────────────────────────
-function crearPedidos(ss) {
-  if (ss.getSheetByName(SH.PEDIDOS)) return;
-  const s = ss.insertSheet(SH.PEDIDOS);
-  const h = ['Fecha','Código','Nombre','Celular','Localidad','Barrio','Dirección',
-    'Apto','Referencia','GPS','Horario','Productos','Nota','Items',
-    'Estado','Valor ($)','Yapa','Dom.Rest.','Comisión Plaza'];
-  encabezado(s, h, '#1b4332');
-  s.setFrozenRows(1); s.setColumnWidth(12, 320);
-}
-function normProds(raw) {
-  const r = String(raw||'');
-  // Formato nuevo: producto::cantidad::unidad;;;producto2::cantidad2::unidad2
-  if(r.indexOf(';;;')>-1)
-    return r.split(';;;').map(p=>{
-      const parts=p.split('::');
-      return parts.length>=3 ? parts[0]+': '+parts[1]+' '+parts[2] : p;
-    }).join(' | ');
-  // Formato ~~
-  if(r.indexOf('~~')>-1)
-    return r.split('~~').map(p=>{
-      const i=p.indexOf(':');
-      return i>-1 ? p.slice(0,i)+': '+p.slice(i+1) : p;
-    }).join(' | ');
-  return r;
-}
-function escribirPedido(ss, d) {
-  const s = ss.getSheetByName(SH.PEDIDOS);
-  const fecha = fmt(new Date());
-  const prodsDisplay = normProds(d.productos);
-  s.appendRow([fecha, d.codigo||'', d.nombre||'', d.celular||'',
-    d.localidad||'', d.barrio||'', d.direccion||'', d.apto||'',
-    d.referencia||'', d.gps||'', d.horario||'', prodsDisplay,
-    d.nota||'', Number(d.total_items)||0, 'Lista de compra', '', '', Number(d.domicilios_restantes)||0, '']);
-  const lr = s.getLastRow();
-  if(lr%2===0) s.getRange(lr,1,1,19).setBackground('#f0faf2');
-}
-function actualizarPedido(ss, d) {
-  const s = ss.getSheetByName(SH.PEDIDOS); if(!s) return;
-  const rows = s.getDataRange().getValues();
-  for(let i=1; i<rows.length; i++) {
-    if(String(rows[i][PC.CODIGO])===String(d.codigo)) {
-      const f=i+1;
-      if(d.estado!==undefined)   s.getRange(f, PC.ESTADO+1).setValue(d.estado);
-      if(d.valor!==undefined)    s.getRange(f, PC.VALOR+1).setValue(d.valor);
-      if(d.yapa!==undefined)     s.getRange(f, PC.YAPA+1).setValue(d.yapa);
-      if(d.comision!==undefined) s.getRange(f, PC.COMISION+1).setValue(d.comision);
-      const color = COLORES[d.estado]||'#ffffff';
-      s.getRange(f,1,1,19).setBackground(color);
-      if(d.estado==='Entregado' && d.valor) registrarVentaDesde(ss, rows[i], d);
-      break;
-    }
-  }
-  if(d.domicilios!==undefined && d.celular) actualizarDomCliente(ss, d.celular, d.domicilios);
-}
-function getPedidos(ss, estado) {
-  const s = ss.getSheetByName(SH.PEDIDOS); if(!s) return [];
-  return ss.getSheetByName(SH.PEDIDOS).getDataRange().getValues().slice(1).map((r,i)=>({
-    fila:i+2, fecha:String(r[PC.FECHA]), codigo:r[PC.CODIGO],
-    nombre:r[PC.NOMBRE], celular:r[PC.CELULAR], localidad:r[PC.LOCALIDAD],
-    barrio:r[PC.BARRIO], direccion:r[PC.DIRECCION], apto:r[PC.APTO],
-    referencia:r[PC.REFERENCIA], gps:r[PC.GPS], horario:r[PC.HORARIO],
-    productos:r[PC.PRODUCTOS], nota:r[PC.NOTA], items:r[PC.ITEMS],
-    estado:r[PC.ESTADO]||'Lista de compra', valor:r[PC.VALOR]||'',
-    yapa:r[PC.YAPA]||'', domRestantes:r[PC.DOM_REST]||0, comision:r[PC.COMISION]||''
-  })).filter(p=>!estado||p.estado===estado);
-}
+/* Checklist */
+.check-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--gp)}
+.check-row:last-child{border-bottom:none}
+.chk{width:24px;height:24px;border-radius:6px;border:2px solid var(--br);background:white;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+.chk.done{background:var(--gl);border-color:var(--gl);color:white}
+.clabel{font-size:13px;color:var(--tx);flex:1;line-height:1.3}
+.clabel.done{text-decoration:line-through;color:var(--tl)}
 
-// ── Verificar domicilios de un celular específico ──
-function verificarCliente(ss, celular) {
-  if(!celular) return {domicilios:0,encontrado:false};
-  const cel=String(celular).replace(/\D/g,'');
-  // Buscar en Clientes
-  const cs=ss.getSheetByName(SH.CLIENTES);
-  if(cs){
-    const rows=cs.getDataRange().getValues();
-    for(let i=1;i<rows.length;i++){
-      if(String(rows[i][0]).replace(/\D/g,'')===cel){
-        return{domicilios:Number(rows[i][6])||0,encontrado:true,nombre:rows[i][1]};
-      }
-    }
-  }
-  // Si no está en Clientes, buscar en Suscripciones
-  const ss2=ss.getSheetByName(SH.SUSCRIPCIONES);
-  if(ss2){
-    const rows=ss2.getDataRange().getValues();
-    for(let i=1;i<rows.length;i++){
-      if(String(rows[i][0]).replace(/\D/g,'')===cel){
-        return{domicilios:Number(rows[i][7])||0,encontrado:true,nombre:rows[i][1]};
-      }
-    }
-  }
-  return{domicilios:0,encontrado:false};
-}
+/* Yapa checkboxes */
+.yapa-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f5f5f5}
+.yapa-row:last-child{border-bottom:none}
+.ychk{width:22px;height:22px;border-radius:6px;border:2px solid #f9a825;background:white;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .15s}
+.ychk.on{background:#f9a825;border-color:#f9a825;color:white}
 
-// ── CLIENTES ───────────────────────────────────
-function crearClientes(ss) {
-  if(ss.getSheetByName(SH.CLIENTES)) return;
-  const s = ss.insertSheet(SH.CLIENTES);
-  encabezado(s,['Celular','Nombre','Dirección','Primer Pedido','Último Pedido','Total Pedidos','Domicilios'],'#2d6a4f');
-  s.setFrozenRows(1);
-}
-function actualizarCliente(ss, d) {
-  const s=ss.getSheetByName(SH.CLIENTES); if(!s)return;
-  const cel=String(d.celular), rows=s.getDataRange().getValues();
-  let f=-1;
-  for(let i=1;i<rows.length;i++){if(String(rows[i][0])===cel){f=i+1;break;}}
-  const ahora=fmt(new Date());
-  if(f===-1){s.appendRow([cel,d.nombre||'',d.direccion||'',ahora,ahora,1,d.domicilios_restantes||0]);}
-  else{
-    s.getRange(f,2).setValue(d.nombre||'');
-    s.getRange(f,3).setValue(d.direccion||'');
-    s.getRange(f,5).setValue(ahora);
-    s.getRange(f,6).setValue((Number(rows[f-1][5])||0)+1);
-  }
-}
-function actualizarDomCliente(ss,celular,cantidad){
-  const s=ss.getSheetByName(SH.CLIENTES);if(!s)return;
-  const rows=s.getDataRange().getValues();
-  for(let i=1;i<rows.length;i++){
-    if(String(rows[i][0])===String(celular)){s.getRange(i+1,7).setValue(Number(cantidad));break;}
-  }
-}
-function getClientes(ss){
-  const s=ss.getSheetByName(SH.CLIENTES);if(!s)return[];
-  return s.getDataRange().getValues().slice(1).map(r=>({
-    celular:r[0],nombre:r[1],direccion:r[2],primerPedido:String(r[3]),
-    ultimoPedido:String(r[4]),totalPedidos:r[5],domicilios:r[6]||0
-  }));
-}
+.inp{width:100%;padding:11px 13px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:14px;color:var(--tx);outline:none;transition:border .2s;background:white}
+.inp:focus{border-color:var(--gl)}
 
-// ── SUSCRIPCIONES ──────────────────────────────
-function crearSuscripciones(ss){
-  if(ss.getSheetByName(SH.SUSCRIPCIONES))return;
-  const s=ss.insertSheet(SH.SUSCRIPCIONES);
-  encabezado(s,['Celular','Nombre','Plan','Valor Pagado','Fecha Pago',
-    'Domicilios Totales','Domicilios Usados','Domicilios Restantes','Estado','Vence'],'#1565c0');
-  s.setFrozenRows(1);
-}
-function guardarSuscripcion(ss,d){
-  const s=ss.getSheetByName(SH.SUSCRIPCIONES);if(!s)return;
-  const cel=String(d.celular),rows=s.getDataRange().getValues();
-  let f=-1;
-  for(let i=1;i<rows.length;i++){if(String(rows[i][0])===cel){f=i+1;break;}}
-  const fecha=fmt(new Date());
-  const vence=d.meses>0?fmtD(addMeses(new Date(),d.meses)):'N/A';
-  const envios=Number(d.envios)||0;
-  if(f===-1){
-    s.appendRow([cel,d.nombre||'',d.plan||'',d.valor||0,fecha,envios,0,envios,'Activo',vence]);
-  } else {
-    const domAct=Number(rows[f-1][7])||0;
-    const domTot=Number(rows[f-1][5])||0;
-    s.getRange(f,4).setValue(d.valor);s.getRange(f,5).setValue(fecha);
-    s.getRange(f,6).setValue(domTot+envios);
-    s.getRange(f,8).setValue(domAct+envios);
-    s.getRange(f,10).setValue(vence);
-  }
-  // ← CRÍTICO: también crear/actualizar en pestaña Clientes
-  crearClientes(ss);
-  const cs=ss.getSheetByName(SH.CLIENTES);
-  const crow=cs.getDataRange().getValues();
-  let cf=-1;
-  for(let i=1;i<crow.length;i++){if(String(crow[i][0])===cel){cf=i+1;break;}}
-  const domActuales=cf>-1?(Number(crow[cf-1][6])||0):0;
-  if(cf===-1){
-    cs.appendRow([cel,d.nombre||'','',fecha,fecha,0,envios]);
-  } else {
-    cs.getRange(cf,7).setValue(domActuales+envios);
-  }
-}
-function getSuscripciones(ss){
-  const s=ss.getSheetByName(SH.SUSCRIPCIONES);if(!s)return[];
-  return s.getDataRange().getValues().slice(1).map(r=>({
-    celular:r[0],nombre:r[1],plan:r[2],valorPagado:r[3],fechaPago:String(r[4]),
-    domTotales:r[5],domUsados:r[6],domRestantes:r[7],estado:r[8],vence:String(r[9])
-  }));
-}
+.btn{display:block;width:100%;padding:13px 18px;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;text-align:center;cursor:pointer;transition:transform .15s;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn-g{background:linear-gradient(135deg,var(--gm),var(--gl));color:white;box-shadow:0 3px 10px rgba(45,106,79,.3)}
+.btn-wa{background:linear-gradient(135deg,#25d366,#128c7e);color:white}
+.btn-o{background:white;color:var(--gd);border:2px solid var(--gm)}
+.btn-sm{display:inline-flex;align-items:center;padding:6px 12px;border:none;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;gap:4px}
+.gap8{display:flex;flex-direction:column;gap:8px}
 
-// ── VENTAS ─────────────────────────────────────
-function crearVentas(ss){
-  if(ss.getSheetByName(SH.VENTAS))return;
-  const s=ss.insertSheet(SH.VENTAS);
-  encabezado(s,['Fecha','Código','Cliente','Celular','Localidad',
-    'Valor ($)','Comisión Plaza ($)','% Plaza','Ingreso Neto ($)','Mes'],'#880e4f');
-  s.setFrozenRows(1);
-}
-function registrarVentaDesde(ss, row, d) {
-  const s=ss.getSheetByName(SH.VENTAS);if(!s)return;
-  const valor=Number(d.valor)||0, comision=Number(d.comision||row[PC.COMISION])||0;
-  const mes=new Date().toLocaleDateString('es-CO',{month:'long',year:'numeric'});
-  s.appendRow([fmt(new Date()),row[PC.CODIGO],row[PC.NOMBRE],row[PC.CELULAR],
-    row[PC.LOCALIDAD],valor,comision,
-    valor>0?Math.round(comision/valor*100)+'%':'',valor-comision,mes]);
-}
-function registrarComision(ss,d){ actualizarPedido(ss,d); }
-function getVentas(ss){
-  const s=ss.getSheetByName(SH.VENTAS);if(!s)return{filas:[],totales:{}};
-  const filas=s.getDataRange().getValues().slice(1).map(r=>({
-    fecha:String(r[0]),codigo:r[1],cliente:r[2],celular:r[3],localidad:r[4],
-    valor:r[5],comision:r[6],pctPlaza:r[7],neto:r[8],mes:r[9]
-  }));
-  return{filas,totales:{
-    totalVentas:filas.reduce((a,r)=>a+Number(r.valor||0),0),
-    totalComisiones:filas.reduce((a,r)=>a+Number(r.comision||0),0),
-    totalNeto:filas.reduce((a,r)=>a+Number(r.neto||0),0),
-    numPedidos:filas.length
-  }};
-}
+/* Estado selector */
+.estado-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ebtn{padding:10px 8px;border-radius:9px;border:2px solid #ddd;background:white;font-size:12px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;color:#555}
+.ebtn.on{color:white}
+.ebtn.on[data-e="Lista de compra"]   {background:#9e9e9e;border-color:#9e9e9e}
+.ebtn.on[data-e="Por consignación"]{background:#f9a825;border-color:#f9a825}
+.ebtn.on[data-e="Pagado"]       {background:#43a047;border-color:#43a047}
+.ebtn.on[data-e="Empacado"]        {background:#0288d1;border-color:#0288d1}
+.ebtn.on[data-e="Entregado"]    {background:#8e24aa;border-color:#8e24aa}
 
-// ── ANÁLISIS ───────────────────────────────────
-function crearAnalisis(ss){
-  if(ss.getSheetByName(SH.ANALISIS))return;
-  const s=ss.insertSheet(SH.ANALISIS);
-  encabezado(s,['Producto','Categoría','Total Pedidos','Última Vez','Este Mes','Mes Anterior','Tendencia','Unidad'],'#1a5c1a');
-  s.setFrozenRows(1);
+/* Summary card */
+.summary-card{background:linear-gradient(160deg,var(--gd),var(--gm));color:white;border-radius:14px;padding:18px;margin-bottom:8px}
+.sc-prod{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.15);font-size:13px}
+.sc-prod:last-child{border-bottom:none}
+
+/* Filtros */
+.filter-bar{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.fpill{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1.5px solid var(--br);background:white;color:var(--tm);font-size:12px;font-weight:600;cursor:pointer}
+.fpill.on{background:var(--gd);color:white;border-color:var(--gd)}
+
+/* Entrega */
+.loc-header{background:var(--gd);color:white;padding:10px 14px;border-radius:10px 10px 0 0;font-weight:800;font-size:15px;margin-top:16px}
+.loc-header:first-child{margin-top:0}
+.print-order{border:1px solid var(--br);border-top:none;padding:13px;background:white;margin-bottom:2px}
+.print-order:last-child{border-radius:0 0 10px 10px;margin-bottom:0}
+
+/* Auto-refresh badge */
+.refresh-badge{background:rgba(255,255,255,.2);color:white;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:600;border:none;cursor:pointer}
+
+.loading{text-align:center;padding:40px;color:var(--tl)}
+.spinner{display:inline-block;width:26px;height:26px;border:3px solid var(--gp);border-top-color:var(--gm);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px 20px;color:var(--tl);font-size:14px}
+
+@media print{
+  .topbar,.tab-bar,.no-print{display:none!important}
+  body{background:white}
+  .loc-header{background:#1b4332!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .print-order{page-break-inside:avoid}
 }
-function actualizarAnalisis(ss,data){
-  const s=ss.getSheetByName(SH.ANALISIS);if(!s||!data.productos)return;
-  const prodsRaw=String(data.productos||'');
-  const prods=prodsRaw.indexOf('~~')>-1
-    ?prodsRaw.split('~~').map(p=>p.split(':')[0].trim())
-    :prodsRaw.split('|').map(p=>p.split(':')[0].trim());
-  if(!prods.length)return;
-  const rows=s.getDataRange().getValues();
-  const idx={};for(let i=1;i<rows.length;i++)idx[rows[i][0]]=i+1;
-  prods.forEach(p=>{
-    const nombre=p.split(':')[0].trim();if(!nombre)return;
-    if(idx[nombre]){
-      const f=idx[nombre],tot=Number(s.getRange(f,3).getValue())||0,em=Number(s.getRange(f,5).getValue())||0;
-      s.getRange(f,3).setValue(tot+1);s.getRange(f,4).setValue(fmt(new Date()));s.getRange(f,5).setValue(em+1);
-      s.getRange(f,7).setValue(em+1>(Number(s.getRange(f,6).getValue())||0)?'↑ Sube':'↓ Baja');
-    }else{s.appendRow([nombre,'',1,fmt(new Date()),1,0,'Nuevo','']);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">🛒 Smart Shopper — Operaciones</div>
+    <div class="topbar-sub" id="top-sub">Cargando…</div>
+  </div>
+  <button class="refresh-badge" onclick="cargarPedidos()">🔄 Actualizar</button>
+</div>
+
+<div class="tab-bar" style="overflow-x:auto;scrollbar-width:none">
+  <button class="tab on" onclick="setTab('suscripciones')" id="tab-suscripciones" style="flex-shrink:0;color:#1565c0;border-bottom-color:#1565c0">💳 Suscripciones</button>
+  <button class="tab" onclick="setTab('pedidos')" id="tab-pedidos" style="flex-shrink:0">📋 Pedidos</button>
+  <button class="tab" onclick="setTab('entrega')" id="tab-entrega" style="flex-shrink:0">🚚 Entrega</button>
+  <button class="tab" onclick="setTab('ventas')" id="tab-ventas" style="flex-shrink:0">💰 Ventas</button>
+  <button class="tab" onclick="setTab('analisis')" id="tab-analisis" style="flex-shrink:0">📊 Análisis</button>
+  <button class="tab" onclick="setTab('catalogo')" id="tab-catalogo" style="flex-shrink:0">🗂️ Catálogo</button>
+  <button class="tab" onclick="setTab('config')" id="tab-config" style="flex-shrink:0">⚙️ Config</button>
+</div>
+
+<!-- SUSCRIPCIONES -->
+<div id="view-suscripciones" class="content">
+
+  <!-- COLA DE PENDIENTES -->
+  <div id="cola-pendientes" style="display:none;margin-bottom:12px">
+    <div style="background:#fff8e1;border:2px solid #f9a825;border-radius:12px;padding:14px">
+      <div style="font-weight:800;color:#f57f17;font-size:14px;margin-bottom:8px">⏳ Pendientes de activar</div>
+      <div id="cola-items"></div>
+    </div>
+  </div>
+
+  <!-- FORMULARIO ACTIVAR -->
+  <div class="sec" style="border:2px solid #1565c0;background:#e3f2fd">
+    <div class="sec-title" style="color:#0d47a1;font-size:15px">💳 Activar suscripción</div>
+    <p style="font-size:13px;color:#1565c0;margin-bottom:12px">Cuando el cliente envía el comprobante, verifica y activa aquí</p>
+
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:4px">📱 Celular del cliente *</label>
+      <input class="inp" id="sus-cel" type="tel" placeholder="Ej: 3001234567" inputmode="numeric"
+        oninput="buscarClienteEnWA(this.value)">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:4px">👤 Nombre del cliente *</label>
+      <input class="inp" id="sus-nombre" type="text" placeholder="Nombre completo">
+    </div>
+
+    <!-- Verificar en WhatsApp -->
+    <div id="wa-verify-box" style="display:none;background:white;border-radius:10px;padding:10px 12px;margin-bottom:12px;border:1.5px solid #25d366">
+      <div style="font-size:12px;font-weight:700;color:#128c7e;margin-bottom:6px">📲 Verificar pago en WhatsApp</div>
+      <a id="wa-verify-link" href="#" target="_blank" class="btn btn-wa" style="font-size:13px;padding:10px;text-align:center;text-decoration:none;display:block">
+        💬 Ver mensaje de este cliente
+      </a>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:8px">📦 Plan contratado *</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
+        <div class="plan-opt" id="pla-unica" onclick="selPlanAdmin('unica',1,20000,'Solo 1 vez')">
+          <div class="po-label">Solo 1 vez</div>
+          <div class="po-price">$20.000</div>
+          <div class="po-envios">1 envío</div>
+        </div>
+        <div class="plan-opt" id="pla-mes1" onclick="selPlanAdmin('mes1',4,60000,'1 mes')">
+          <div class="po-label">1 mes</div>
+          <div class="po-price">$60.000</div>
+          <div class="po-envios">4 envíos</div>
+        </div>
+        <div class="plan-opt" id="pla-mes2" onclick="selPlanAdmin('mes2',8,100000,'2 meses')">
+          <div class="po-label">2 meses</div>
+          <div class="po-price">$100.000</div>
+          <div class="po-envios">8 envíos</div>
+        </div>
+        <div class="plan-opt" id="pla-mes3" onclick="selPlanAdmin('mes3',13,135000,'3 meses')" style="border-color:#f9a825">
+          <div class="po-label">3 meses ⭐</div>
+          <div class="po-price">$135.000</div>
+          <div class="po-envios">13 envíos</div>
+        </div>
+        <div class="plan-opt" id="pla-mes6" onclick="selPlanAdmin('mes6',27,240000,'6 meses')">
+          <div class="po-label">6 meses</div>
+          <div class="po-price">$240.000</div>
+          <div class="po-envios">27 envíos</div>
+        </div>
+        <div class="plan-opt" id="pla-ano1" onclick="selPlanAdmin('ano1',54,360000,'1 año')">
+          <div class="po-label">1 año 🏆</div>
+          <div class="po-price">$360.000</div>
+          <div class="po-envios">54 envíos</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:white;border-radius:10px;padding:12px;margin-bottom:12px;border:1.5px solid #bbdefb;min-height:48px">
+      <div style="font-size:11px;color:#1565c0;font-weight:700;margin-bottom:3px">Resumen a activar:</div>
+      <div id="sus-resumen" style="font-size:14px;color:#333;font-weight:500">Selecciona un plan arriba</div>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-o" onclick="agregarACola()" style="flex:1;font-size:13px">
+        ➕ Guardar en cola
+      </button>
+      <button class="btn" onclick="activarSuscripcion()"
+        style="flex:2;background:linear-gradient(135deg,#1565c0,#1976d2);color:white;font-weight:800">
+        ✅ Activar ahora
+      </button>
+    </div>
+  </div>
+
+  <!-- LISTADO SUSCRITOS -->
+  <div class="sec" style="margin-top:12px">
+    <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>📋 Clientes suscritos</span>
+      <button class="btn-sm" onclick="cargarListaSus()" style="background:var(--gp);color:var(--gd);border:none">🔄</button>
+    </div>
+    <div id="sus-lista"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+
+</div>
+<style>
+.plan-opt{border:2px solid #bbdefb;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;background:white;transition:all .15s}
+.plan-opt.sel{border-color:#1565c0;background:#e3f2fd}
+.po-label{font-weight:700;font-size:12px;color:#0d47a1}
+.po-price{font-size:15px;font-weight:800;color:#1b4332;margin:2px 0}
+.po-envios{font-size:10px;color:#7a9e7e}
+</style>
+
+
+<!-- PEDIDOS -->
+<div id="view-pedidos" class="content" style="display:none">
+  <div class="filter-bar">
+    <button class="fpill on" onclick="setFiltro('todos',this)">Todos</button>
+    <button class="fpill" onclick="setFiltro('Lista de compra',this)">⚪ Lista de compra</button>
+    <button class="fpill" onclick="setFiltro('Por consignación',this)">🟡 Por consig.</button>
+    <button class="fpill" onclick="setFiltro('Pagado',this)">🟢 Pagado</button>
+    <button class="fpill" onclick="setFiltro('Empacado',this)">🔵 Empacado</button>
+    <button class="fpill" onclick="setFiltro('Entregado',this)">🟣 Entregado</button>
+  </div>
+  <div id="lista-pedidos"><div class="loading"><div class="spinner"></div><p style="margin-top:10px">Cargando pedidos…</p></div></div>
+</div>
+
+<!-- VENTAS -->
+<div id="view-ventas" class="content" style="display:none">
+  <div id="ventas-resumen" class="sec" style="margin-bottom:12px">
+    <div class="sec-title">💰 Resumen de ventas</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="ventas-kpis"></div>
+  </div>
+  <div class="sec">
+    <div class="sec-title" style="display:flex;justify-content:space-between">
+      <span>📋 Detalle de ventas</span>
+      <button class="btn-sm" onclick="cargarVentas()" style="background:var(--gp);color:var(--gd);border:none">🔄</button>
+    </div>
+    <div id="ventas-lista"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-title">🏆 Comisión de la plaza</div>
+    <p style="font-size:13px;color:var(--tl);margin-bottom:10px">Registra manualmente la comisión acordada por pedido</p>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input class="inp" id="com-codigo" type="text" placeholder="Código pedido" style="flex:1">
+      <input class="inp" id="com-valor" type="number" placeholder="$ comisión" style="width:110px">
+    </div>
+    <button class="btn btn-g" onclick="guardarComision()">Guardar comisión</button>
+  </div>
+</div>
+
+<!-- ANÁLISIS -->
+<div id="view-analisis" class="content" style="display:none">
+  <div class="sec">
+    <div class="sec-title" style="display:flex;justify-content:space-between">
+      <span>📈 Productos más pedidos</span>
+      <button class="btn-sm" onclick="cargarAnalisis()" style="background:var(--gp);color:var(--gd);border:none">🔄</button>
+    </div>
+    <p style="font-size:12px;color:var(--tl);margin-bottom:10px">Úsalo para saber qué comprar más en la plaza y en qué fechas</p>
+    <div id="analisis-lista"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<!-- CATÁLOGO -->
+<div id="view-catalogo" class="content" style="display:none">
+  <div class="sec">
+    <div class="sec-title">➕ Agregar producto</div>
+    <p style="font-size:12px;color:var(--tl);margin-bottom:10px">El nuevo producto aparecerá en la app del cliente automáticamente</p>
+    <div class="field" style="margin-bottom:10px">
+      <label style="font-size:11px;font-weight:700;color:var(--tm);display:block;margin-bottom:4px">Nombre del producto *</label>
+      <input class="inp" id="cat-nombre" type="text" placeholder="Ej: Papa Negra">
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <label style="font-size:11px;font-weight:700;color:var(--tm);display:block;margin-bottom:4px">Categoría *</label>
+      <select class="inp" id="cat-cat">
+        <option>🥦 Verduras</option><option>🍎 Frutas</option>
+        <option>🥤 Pulpas</option><option>🥩 Carnes</option>
+        <option>🥛 Lácteos</option><option>🛒 Otros</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:var(--tm);display:block;margin-bottom:4px">Se vende por *</label>
+      <div style="display:flex;gap:8px">
+        <button id="tipo-u" class="ebtn on" data-e="u" onclick="setTipo('u')" style="flex:1;border-color:var(--gm)">⚖️ Unidad</button>
+        <button id="tipo-g" class="ebtn" data-e="g" onclick="setTipo('g')" style="flex:1">⚖️ Gramos</button>
+      </div>
+    </div>
+    <button class="btn btn-g" onclick="agregarProducto()">➕ Agregar al catálogo</button>
+  </div>
+  <div class="sec" style="margin-top:12px">
+    <div class="sec-title" style="display:flex;justify-content:space-between">
+      <span>📦 Catálogo actual</span>
+      <button class="btn-sm" onclick="cargarCatalogo()" style="background:var(--gp);color:var(--gd);border:none">🔄</button>
+    </div>
+    <div id="catalogo-lista"><div class="loading"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+
+  <button class="btn btn-o no-print" onclick="window.print()" style="margin-bottom:14px">🖨️ Imprimir hoja de ruta</button>
+  <div id="ruta-entrega"><div class="empty">No hay pedidos listos para entregar</div></div>
+</div>
+
+<!-- CONFIG -->
+<div id="view-config" class="content" style="display:none">
+  <div class="sec">
+    <div class="sec-title">⚙️ Conexión con Google Sheets</div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;font-weight:700;color:var(--tm);display:block;margin-bottom:5px">URL del Apps Script</label>
+      <input class="inp" id="cfg-webhook" type="text" placeholder="https://script.google.com/macros/s/…/exec">
+    </div>
+    <button class="btn btn-g" onclick="guardarConfig()">Guardar</button>
+  </div>
+  <div class="sec" style="margin-top:12px">
+    <div class="sec-title">📦 Activar domicilios (post-pago)</div>
+    <p style="font-size:13px;color:var(--tm);margin-bottom:10px">Ingresa manualmente cuántos envíos tiene el cliente</p>
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input class="inp" id="dom-cel" type="tel" placeholder="Celular" style="flex:1">
+      <input class="inp" id="dom-cant" type="number" placeholder="# envíos" style="width:80px">
+    </div>
+    <button class="btn btn-g" onclick="activarDomicilios()">✅ Activar</button>
+  </div>
+  <div class="sec" style="margin-top:12px;background:#e8f5e9">
+    <div class="sec-title">🎨 Guía de colores</div>
+    <div style="display:flex;flex-direction:column;gap:7px;font-size:13px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:#9e9e9e;border-radius:4px;display:inline-block"></span> Lista de compra — pedido recibido</div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:#f9a825;border-radius:4px;display:inline-block"></span> Por consignación — esperando pago</div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:#43a047;border-radius:4px;display:inline-block"></span> Pagado — pago confirmado</div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:#0288d1;border-radius:4px;display:inline-block"></span> Empacado — empacado y listo</div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="width:16px;height:16px;background:#8e24aa;border-radius:4px;display:inline-block"></span> Entregado — domicilio completado</div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL DETALLE -->
+<div class="panel" id="panel">
+  <div class="panel-top">
+    <button class="panel-close" onclick="cerrarPanel()">← Volver</button>
+    <div style="font-size:11px;opacity:.65;margin-bottom:2px" id="p-code"></div>
+    <div style="font-size:20px;font-weight:800" id="p-nombre"></div>
+    <div style="font-size:12px;opacity:.8;margin-top:2px" id="p-tel"></div>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+</div>
+
+<script>
+let WEBHOOK='', WA_NEG='573124124034';
+let pedidos=[], filtro='todos', pActual=null, checked={}, yapaChecked={};
+let autoRefreshTimer=null;
+
+// ── CONFIG ────────────────────────────────────
+function loadConfig(){
+  WEBHOOK=localStorage.getItem('ss_webhook')||'https://script.google.com/macros/s/AKfycbxFfEzCCcODwrV8rizmdyBLOV-WUALxwVdLNe9i7pRSG_xunNx-Dq0cZS5_LubDhIID/exec';
+  const wi=$('cfg-webhook');if(wi)wi.value=WEBHOOK;
+}
+function guardarConfig(){
+  WEBHOOK=$('cfg-webhook').value.trim();
+  localStorage.setItem('ss_webhook',WEBHOOK);
+  alert('✅ Guardado');
+}
+const $=id=>document.getElementById(id);
+
+// ── TABS ──────────────────────────────────────
+function setTab(t){
+  ['suscripciones','pedidos','entrega','ventas','analisis','catalogo','config'].forEach(id=>{
+    const v=document.getElementById('view-'+id);
+    const tb=document.getElementById('tab-'+id);
+    if(v)v.style.display=id===t?'block':'none';
+    if(tb)tb.classList.toggle('on',id===t);
   });
-  if(s.getLastRow()>2)s.getRange(2,1,s.getLastRow()-1,8).sort({column:3,ascending:false});
-}
-function getAnalisis(ss){
-  const s=ss.getSheetByName(SH.ANALISIS);if(!s)return[];
-  return s.getDataRange().getValues().slice(1).map(r=>({
-    producto:r[0],categoria:r[1],total:r[2],ultimaVez:String(r[3]),
-    esteMes:r[4],mesAnterior:r[5],tendencia:r[6],unidad:r[7]
-  }));
+  if(t==='pedidos')cargarPedidos();
+  if(t==='entrega')renderEntrega();
+  if(t==='ventas')cargarVentas();
+  if(t==='analisis')cargarAnalisis();
+  if(t==='catalogo')cargarCatalogo();
+  if(t==='suscripciones')cargarListaSus();
 }
 
-// ── CATÁLOGO ───────────────────────────────────
-function crearCatalogo(ss){
-  if(ss.getSheetByName(SH.CATALOGO))return;
-  const s=ss.insertSheet(SH.CATALOGO);
-  encabezado(s,['Nombre','Categoría','Tipo (u/g)','Activo (SI/NO)'],'#4a148c');
-  s.setFrozenRows(1);
-  const inicial=[
-    ['Acelga','🥦 Verduras','g','SI'],['Auyama','🥦 Verduras','g','SI'],['Alcachofa','🥦 Verduras','u','SI'],
-    ['Ají','🥦 Verduras','u','SI'],['Ajo Importado','🥦 Verduras','u','SI'],['Ajo Nacional','🥦 Verduras','u','SI'],
-    ['Apio','🥦 Verduras','u','SI'],['Aromáticas','🥦 Verduras','u','SI'],['Arracacha','🥦 Verduras','g','SI'],
-    ['Arveja Cáscara','🥦 Verduras','g','SI'],['Arveja Desgranada','🥦 Verduras','g','SI'],
-    ['Brócoli','🥦 Verduras','u','SI'],['Berenjena','🥦 Verduras','u','SI'],
-    ['Cabezona Blanca','🥦 Verduras','u','SI'],['Cabezona Roja','🥦 Verduras','u','SI'],
-    ['Calabaza','🥦 Verduras','g','SI'],['Camote','🥦 Verduras','g','SI'],
-    ['Cebolla Larga','🥦 Verduras','u','SI'],['Cebolla Puerro','🥦 Verduras','u','SI'],
-    ['Cebollin','🥦 Verduras','u','SI'],['Champiñón','🥦 Verduras','g','SI'],
-    ['Cilantro','🥦 Verduras','u','SI'],['Coliflor','🥦 Verduras','u','SI'],
-    ['Espárragos','🥦 Verduras','g','SI'],['Espinaca','🥦 Verduras','g','SI'],
-    ['Espinaca Baby','🥦 Verduras','g','SI'],['Frijol','🥦 Verduras','g','SI'],
-    ['Guatila','🥦 Verduras','u','SI'],['Habichuela','🥦 Verduras','g','SI'],
-    ['Jengibre','🥦 Verduras','g','SI'],['Lechuga Cogollo','🥦 Verduras','u','SI'],
-    ['Lechuga Batavia','🥦 Verduras','u','SI'],['Lechuga Morada','🥦 Verduras','u','SI'],
-    ['Lechuga Romana','🥦 Verduras','u','SI'],['Lechuga Rúgula','🥦 Verduras','g','SI'],
-    ['Mazorca','🥦 Verduras','u','SI'],['Mazorca Desgranada','🥦 Verduras','g','SI'],
-    ['Papa Criolla','🥦 Verduras','g','SI'],['Papa Sabanera','🥦 Verduras','g','SI'],
-    ['Papa Pastusa','🥦 Verduras','g','SI'],['Pepino Cohombro','🥦 Verduras','u','SI'],
-    ['Pepino Común','🥦 Verduras','u','SI'],['Perejil','🥦 Verduras','u','SI'],
-    ['Pimentón','🥦 Verduras','u','SI'],['Rábano','🥦 Verduras','u','SI'],
-    ['Remolacha','🥦 Verduras','g','SI'],['Repollo Blanco','🥦 Verduras','u','SI'],
-    ['Repollo Morado','🥦 Verduras','u','SI'],['Tomate Cherry','🥦 Verduras','g','SI'],
-    ['Tomate Chonto','🥦 Verduras','g','SI'],['Tomate Milano','🥦 Verduras','g','SI'],
-    ['Yuca','🥦 Verduras','g','SI'],['Zanahoria','🥦 Verduras','g','SI'],
-    ['Zanahoria Baby','🥦 Verduras','g','SI'],['Zuchini','🥦 Verduras','u','SI'],
-    ['Aguacate Lorena','🍎 Frutas','u','SI'],['Aguacate Hass','🍎 Frutas','u','SI'],
-    ['Agraz','🍎 Frutas','g','SI'],['Arándanos','🍎 Frutas','g','SI'],
-    ['Banano Bocadillo','🍎 Frutas','u','SI'],['Banano Criollo','🍎 Frutas','u','SI'],
-    ['Ciruela','🍎 Frutas','g','SI'],['Coco','🍎 Frutas','u','SI'],
-    ['Curuba','🍎 Frutas','u','SI'],['Durazno','🍎 Frutas','u','SI'],
-    ['Feijoa','🍎 Frutas','u','SI'],['Fresa','🍎 Frutas','g','SI'],
-    ['Granadilla','🍎 Frutas','u','SI'],['Guanábana','🍎 Frutas','g','SI'],
-    ['Guayaba','🍎 Frutas','g','SI'],['Kiwi','🍎 Frutas','u','SI'],
-    ['Limón','🍎 Frutas','u','SI'],['Lulo','🍎 Frutas','u','SI'],
-    ['Mandarina','🍎 Frutas','u','SI'],['Mango Azúcar','🍎 Frutas','u','SI'],
-    ['Mango Tommy','🍎 Frutas','u','SI'],['Manzana Nacional','🍎 Frutas','u','SI'],
-    ['Manzana Roja','🍎 Frutas','u','SI'],['Manzana Verde','🍎 Frutas','u','SI'],
-    ['Maracuyá','🍎 Frutas','u','SI'],['Melón','🍎 Frutas','u','SI'],
-    ['Mora','🍎 Frutas','g','SI'],['Naranja','🍎 Frutas','u','SI'],
-    ['Papaya','🍎 Frutas','g','SI'],['Patilla','🍎 Frutas','u','SI'],
-    ['Pera','🍎 Frutas','u','SI'],['Piña Golden','🍎 Frutas','u','SI'],
-    ['Piña Lebrija','🍎 Frutas','u','SI'],['Pithaya','🍎 Frutas','u','SI'],
-    ['Tomate de Árbol','🍎 Frutas','u','SI'],['Uchuva','🍎 Frutas','g','SI'],
-    ['Uva Nacional','🍎 Frutas','g','SI'],['Uva Importada','🍎 Frutas','g','SI'],
-    ['Pulpa Piña','🥤 Pulpas','u','SI'],['Pulpa Guayaba','🥤 Pulpas','u','SI'],
-    ['Pulpa Guanábana','🥤 Pulpas','u','SI'],['Pulpa Mango','🥤 Pulpas','u','SI'],
-    ['Pulpa Fresa','🥤 Pulpas','u','SI'],['Pulpa Maracuyá','🥤 Pulpas','u','SI'],
-    ['Pulpa Mora','🥤 Pulpas','u','SI'],['Pulpa Lulo','🥤 Pulpas','u','SI'],
-    ['Salpicón','🥤 Pulpas','u','SI']
-  ];
-  s.getRange(2,1,inicial.length,4).setValues(inicial);
-  s.autoResizeColumns(1,4);
+// ── SUSCRIPCIONES ─────────────────────────────
+const PLANES_ADMIN=[
+  {id:'unica',label:'Solo 1 vez',precio:20000, meses:0, envios:1},
+  {id:'mes1', label:'1 mes',     precio:60000, meses:1, envios:4},
+  {id:'mes2', label:'2 meses',   precio:100000,meses:2, envios:8},
+  {id:'mes3', label:'3 meses',   precio:135000,meses:3, envios:13},
+  {id:'mes6', label:'6 meses',   precio:240000,meses:6, envios:27},
+  {id:'ano1', label:'1 año',     precio:360000,meses:12,envios:54}
+];
+let planSelAdmin=null;
+let colaActivar=[];
+
+function selPlanAdmin(id,envios,precio,label){
+  planSelAdmin={id,envios,precio,label};
+  document.querySelectorAll('.plan-opt').forEach(el=>el.classList.remove('sel'));
+  const el=document.getElementById('pla-'+id);if(el)el.classList.add('sel');
+  const res=document.getElementById('sus-resumen');
+  if(res)res.innerHTML=`<strong>${label}</strong> — $${precio.toLocaleString('es-CO')} — <strong>${envios} envío${envios>1?'s':''}</strong>`;
 }
-function getCatalogo(ss){
-  const s=ss.getSheetByName(SH.CATALOGO);if(!s)return{};
-  const rows=s.getDataRange().getValues().slice(1);
-  const cat={};
-  rows.filter(r=>String(r[3]).toUpperCase()==='SI'&&r[0]).forEach(r=>{
-    const c=r[1]||'🛒 Otros';
-    if(!cat[c])cat[c]=[];
-    cat[c].push({n:String(r[0]),u:String(r[2]).toLowerCase()||'u'});
+
+function buscarClienteEnWA(cel){
+  const clean=cel.replace(/\D/g,'');
+  const box=document.getElementById('wa-verify-box');
+  const link=document.getElementById('wa-verify-link');
+  if(clean.length>=7&&box&&link){
+    box.style.display='block';
+    link.href=`https://wa.me/57${clean}`;
+    link.textContent=`💬 Ver chat de ${clean} en WhatsApp`;
+  }else if(box){box.style.display='none';}
+}
+
+function limpiarFormSus(){
+  const cel=document.getElementById('sus-cel');if(cel)cel.value='';
+  const nom=document.getElementById('sus-nombre');if(nom)nom.value='';
+  const res=document.getElementById('sus-resumen');if(res)res.textContent='Selecciona un plan arriba';
+  const box=document.getElementById('wa-verify-box');if(box)box.style.display='none';
+  document.querySelectorAll('.plan-opt').forEach(el=>el.classList.remove('sel'));
+  planSelAdmin=null;
+}
+
+function validarFormSus(){
+  const cel=document.getElementById('sus-cel')?.value.trim().replace(/\D/g,'');
+  const nombre=document.getElementById('sus-nombre')?.value.trim();
+  if(!cel||cel.length<7){alert('Ingresa el celular del cliente');return null;}
+  if(!nombre){alert('Ingresa el nombre del cliente');return null;}
+  if(!planSelAdmin){alert('Selecciona un plan');return null;}
+  return{cel,nombre,plan:planSelAdmin};
+}
+
+function agregarACola(){
+  const v=validarFormSus();if(!v)return;
+  colaActivar.push({...v,ts:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})});
+  renderCola();limpiarFormSus();
+}
+
+function renderCola(){
+  const box=document.getElementById('cola-pendientes');
+  const items=document.getElementById('cola-items');
+  if(!box||!items)return;
+  if(!colaActivar.length){box.style.display='none';return;}
+  box.style.display='block';
+  items.innerHTML=colaActivar.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #ffe082">
+      <div style="flex:1;font-size:13px">
+        <strong>${c.nombre}</strong> · 📱${c.cel}<br>
+        <span style="color:#f57f17">${c.plan.label} — $${c.plan.precio.toLocaleString('es-CO')} — ${c.plan.envios} envíos</span>
+        <span style="color:#bbb;font-size:11px"> · ${c.ts}</span>
+      </div>
+      <a href="https://wa.me/57${c.cel}" target="_blank" style="background:#25d366;color:white;border-radius:6px;padding:5px 8px;font-size:14px;text-decoration:none">💬</a>
+      <button onclick="activarDeCola(${i})" style="background:#43a047;color:white;border:none;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12px;cursor:pointer">✅</button>
+      <button onclick="quitarDeCola(${i})" style="background:#e57373;color:white;border:none;border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer">✕</button>
+    </div>`).join('')+
+    (colaActivar.length>1?`<button onclick="activarTodaCola()" class="btn btn-g" style="margin-top:10px;font-size:13px">⚡ Activar todos (${colaActivar.length})</button>`:'');
+}
+
+function quitarDeCola(i){colaActivar.splice(i,1);renderCola();}
+
+async function activarDeCola(i){
+  const c=colaActivar[i];
+  const ok=await activarEnSheet(c.cel,c.nombre,c.plan);
+  if(ok){colaActivar.splice(i,1);renderCola();cargarListaSus();}
+}
+
+async function activarTodaCola(){
+  for(let i=colaActivar.length-1;i>=0;i--){
+    const c=colaActivar[i];
+    if(await activarEnSheet(c.cel,c.nombre,c.plan))colaActivar.splice(i,1);
+  }
+  renderCola();cargarListaSus();alert('✅ Todos activados');
+}
+
+async function activarSuscripcion(){
+  const v=validarFormSus();if(!v)return;
+  if(await activarEnSheet(v.cel,v.nombre,v.plan)){limpiarFormSus();cargarListaSus();}
+}
+
+async function activarEnSheet(cel,nombre,plan){
+  if(!WEBHOOK){alert(`✅ (Demo) ${plan.envios} domicilios para ${nombre} — ${cel}`);return true;}
+  try{
+    const params=new URLSearchParams({
+      accion:'nuevaSuscripcion', celular:cel, nombre,
+      plan:plan.label, valor:String(plan.precio),
+      envios:String(plan.envios), meses:String(plan.meses),
+      fechaPago:new Date().toISOString()
+    });
+    // GET con fetch — sin CORS
+    await fetch(WEBHOOK+'?'+params.toString());
+    alert(`✅ Activado!\n👤 ${nombre} — ${cel}\n📦 ${plan.label} — ${plan.envios} envíos`);
+    return true;
+  }catch(err){alert('Error: '+err.message);return false;}
+}
+
+async function cargarListaSus(){
+  const lista=document.getElementById('sus-lista');if(!lista)return;
+  if(!WEBHOOK){lista.innerHTML='<div style="text-align:center;padding:14px;font-size:13px;color:var(--tl)">Configura el webhook en ⚙️ Config</div>';return;}
+  lista.innerHTML='<div class="loading"><div class="spinner"></div></div>';
+  try{
+    const r=await fetch(WEBHOOK+'?accion=suscripciones');
+    const d=await r.json();
+    const subs=d.suscripciones||[];
+    if(!subs.length){lista.innerHTML='<div class="empty">Sin suscripciones aún</div>';return;}
+    lista.innerHTML=subs.map(s=>{
+      const dom=Number(s.domRestantes)||0;
+      return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gp)">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:14px">${s.nombre}</div>
+          <div style="font-size:12px;color:var(--tm)">📱 ${s.celular} · <span style="color:#1565c0">${s.plan||'—'}</span></div>
+          <div style="font-size:11px;color:var(--tl)">Vence: ${s.vence||'N/A'}</div>
+        </div>
+        <div style="text-align:center;min-width:44px">
+          <div style="font-size:22px;font-weight:800;color:${dom>0?'var(--gl)':'#e57373'}">${dom}</div>
+          <div style="font-size:10px;color:var(--tl)">envíos</div>
+        </div>
+        <a href="https://wa.me/57${s.celular}" target="_blank"
+          style="background:#25d366;color:white;border-radius:8px;padding:6px 10px;font-size:18px;text-decoration:none">💬</a>
+      </div>`;
+    }).join('');
+  }catch(e){lista.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
+}
+
+// ── FILTRO ────────────────────────────────────
+function setFiltro(f,btn){
+  filtro=f;
+  document.querySelectorAll('.fpill').forEach(b=>b.classList.toggle('on',b===btn));
+  renderLista();
+}
+
+
+// Helper: split productos string regardless of separator
+function splitProds(str) {
+  if(!str) return [];
+  if(str.indexOf(' | ')>-1) return str.split(' | ').map(s=>s.trim()).filter(Boolean);
+  if(str.indexOf('|')>-1) return str.split('|').map(s=>s.trim()).filter(Boolean);
+  if(str.indexOf(';;;')>-1) return str.split(';;;').map(p=>{
+    const parts=p.split('::');
+    return parts.length>=3?parts[0]+': '+parts[1]+' '+parts[2]:p;
+  }).filter(Boolean);
+  return [str];
+}
+
+// ── COLORES POR ESTADO ────────────────────────
+function eClass(e){return({
+  'Lista de compra':'e-lista','Por consignación':'e-consignacion',
+  'Pagado':'e-pagado','Empacado':'e-empacado','Entregado':'e-entregado'
+})[e]||'e-lista';}
+function pillClass(e){return({
+  'Lista de compra':'pill-lista','Por consignación':'pill-consignacion',
+  'Pagado':'pill-pagado','Empacado':'pill-empacado','Entregado':'pill-entregado'
+})[e]||'pill-lista';}
+function eColor(e){return({'Lista de compra':'#9e9e9e','Por consignación':'#f9a825','Pagado':'#43a047','Empacado':'#0288d1','Entregado':'#8e24aa'})[e]||'#9e9e9e';}
+function fmt$(n){return '$'+Number(n).toLocaleString('es-CO');}
+
+// ── CARGAR PEDIDOS ────────────────────────────
+async function cargarPedidos(){
+  if(!WEBHOOK){
+    // Demo
+    pedidos=[
+      {codigo:'SS1A2B',fecha:'01/05/2026 09:30',nombre:'María García',celular:'3001234567',localidad:'Suba',barrio:'Niza',direccion:'Cra 52 # 127-30',apto:'Apto 401',referencia:'Torre C, portería azul',gps:'',horario:'Tarde (12pm–5pm)',productos:'Aguacate Hass: 3 u | Mora: 500 grm | Papa Criolla: 1 kg | Cilantro: 2 u | Limón: 10 u',nota:'Llamar antes de subir',items:5,estado:'Lista de compra',valor:'',yapa:''},
+      {codigo:'SS2B3C',fecha:'01/05/2026 09:45',nombre:'Luis Martínez',celular:'3158887766',localidad:'Suba',barrio:'Cedritos',direccion:'Cl 140 # 10-22',apto:'Casa',referencia:'Frente al parque',gps:'',horario:'Mañana (8am–12pm)',productos:'Espinaca Baby: 200 grm | Tomate Chonto: 1 kg | Cebolla Larga: 4 u | Zanahoria: 500 grm',nota:'',items:4,estado:'Por consignación',valor:'72000',yapa:''},
+      {codigo:'SS3C4D',fecha:'01/05/2026 10:15',nombre:'Carlos Ruiz',celular:'3109876543',localidad:'Usaquén',barrio:'Santa Bárbara',direccion:'Cl 119 # 15-20',apto:'Casa',referencia:'Casa esquinera, puerta roja',gps:'',horario:'Mañana (8am–12pm)',productos:'Tomate Chonto: 2 kg | Cebolla Larga: 3 u | Espinaca Baby: 200 grm | Banano Criollo: 5 u',nota:'',items:4,estado:'Pagado',valor:'65000',yapa:'Limones'},
+      {codigo:'SS4D5E',fecha:'01/05/2026 10:45',nombre:'Sandra Ospina',celular:'3124445566',localidad:'Usaquén',barrio:'Usaquén centro',direccion:'Cra 6 # 119-30',apto:'Apto 201',referencia:'Edificio azul, portería 24h',gps:'',horario:'Tarde (12pm–5pm)',productos:'Fresa: 500 grm | Mora: 500 grm | Aguacate Hass: 2 u | Pulpa Lulo: 3 u',nota:'Portería solo antes de las 6pm',items:4,estado:'Empacado',valor:'88000',yapa:'Uchuvas'},
+      {codigo:'SS5E6F',fecha:'01/05/2026 11:00',nombre:'Ana López',celular:'3205551234',localidad:'Kennedy',barrio:'Castilla',direccion:'Av. 68 # 38-15',apto:'Apto 203 Bl 5',referencia:'Conjunto Los Pinos',gps:'',horario:'Tarde (12pm–5pm)',productos:'Kiwi: 4 u | Mango Azúcar: 3 u | Pulpa Mora: 2 u | Aguacate Lorena: 2 u | Pimentón: 3 u',nota:'Dejar en portería',items:5,estado:'Entregado',valor:'93000',yapa:'3 Limones'},
+      {codigo:'SS6F7G',fecha:'01/05/2026 11:20',nombre:'Juliana Castro',celular:'3001112233',localidad:'Kennedy',barrio:'Kennedy central',direccion:'Cl 42 sur # 79-10',apto:'',referencia:'Casa amarilla con reja negra',gps:'',horario:'Lo antes posible',productos:'Papa Pastusa: 2 kg | Yuca: 1 kg | Cilantro: 2 u | Ajo Nacional: 3 u | Remolacha: 500 grm',nota:'',items:5,estado:'Lista de compra',valor:'',yapa:''},
+      {codigo:'SS7G8H',fecha:'01/05/2026 11:45',nombre:'Pedro Hernández',celular:'3187778899',localidad:'Chapinero',barrio:'Chapinero Alto',direccion:'Cra 7 # 66-20',apto:'Apto 502',referencia:'Edificio Arboleda, ascensor derecho',gps:'',horario:'Tarde (12pm–5pm)',productos:'Brócoli: 2 u | Coliflor: 1 u | Espárragos: 300 grm | Arándanos: 200 grm | Kiwi: 6 u',nota:'',items:5,estado:'Pagado',valor:'115000',yapa:'Feijoas'}
+    ];
+    $('top-sub').textContent=pedidos.length+' pedidos (modo demo — configura webhook)';
+    renderLista();
+    return;
+  }
+  $('lista-pedidos').innerHTML='<div class="loading"><div class="spinner"></div><p style="margin-top:10px">Actualizando…</p></div>';
+  try{
+    const r=await fetch(WEBHOOK+'?accion=pedidos');
+    const d=await r.json();
+    pedidos=d.pedidos||[];
+    const ahora=new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+    $('top-sub').textContent=`${pedidos.length} pedidos · Actualizado ${ahora}`;
+    renderLista();
+    renderEntrega();
+  }catch(e){
+    $('lista-pedidos').innerHTML=`<div class="empty">⚠️ Error: ${e.message}<br><small>Verifica el webhook en Config</small></div>`;
+  }
+}
+
+// ── LISTA (agrupada por localidad) ────────────
+function renderLista(){
+  const lista=$('lista-pedidos');
+  const filtrados=pedidos.filter(p=>filtro==='todos'||p.estado===filtro);
+  if(!filtrados.length){lista.innerHTML='<div class="empty">No hay pedidos en esta categoría</div>';return;}
+
+  // Agrupar por localidad
+  const porLoc={};
+  filtrados.forEach(p=>{
+    const loc=p.localidad||'Sin localidad';
+    if(!porLoc[loc])porLoc[loc]=[];
+    porLoc[loc].push(p);
   });
-  return cat;
-}
-function agregarProductoAlCatalogo(ss,data){
-  const s=ss.getSheetByName(SH.CATALOGO);if(!s)return;
-  s.appendRow([data.nombre,data.categoria||'🛒 Otros',data.tipo||'u','SI']);
+
+  lista.innerHTML=Object.entries(porLoc).map(([loc,ords])=>`
+    <div style="margin-bottom:4px">
+      <div style="background:var(--gd);color:white;padding:8px 14px;border-radius:10px 10px 0 0;font-weight:800;font-size:13px;display:flex;justify-content:space-between;align-items:center">
+        <span>📍 ${loc}</span>
+        <span style="font-size:11px;opacity:.8;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:20px">${ords.length} pedido${ords.length>1?'s':''}</span>
+      </div>
+      <div style="border-radius:0 0 10px 10px;overflow:hidden">
+        ${ords.map((p,i)=>`
+          <div class="order-card ${eClass(p.estado)}" onclick="abrirPedido('${p.codigo}')"
+            style="border-radius:${i===ords.length-1?'0 0 10px 10px':'0'};margin-bottom:0;border-bottom:${i<ords.length-1?'1px solid #eee':'none'}">
+            <div class="oc-top">
+              <div><div class="oc-name">${p.nombre}</div><div class="oc-code">#${p.codigo} · ${p.fecha}</div></div>
+              <span class="status-pill ${pillClass(p.estado)}">${p.estado}</span>
+            </div>
+            <div class="oc-dir">📍 ${p.direccion}${p.apto?' · '+p.apto:''} — ${p.barrio}</div>
+            <div style="font-size:12px;color:var(--tl)">${p.items} prod.${p.valor?' · <strong style="color:var(--gd)">$'+Number(p.valor).toLocaleString('es-CO')+'</strong>':''}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="height:10px"></div>`).join('');
 }
 
-// ── HELPERS ────────────────────────────────────
-function encabezado(s,hdrs,color){
-  s.appendRow(hdrs);
-  const r=s.getRange(1,1,1,hdrs.length);
-  r.setBackground(color);r.setFontColor('#fff');r.setFontWeight('bold');
+// ── ENTREGA IMPRIMIBLE POR LOCALIDAD ──────────
+function renderEntrega(){
+  const div=$('ruta-entrega');
+  const listos=pedidos.filter(p=>p.estado==='Empacado'||p.estado==='Pagado'||p.estado==='Por consignación');
+  if(!listos.length){div.innerHTML='<div class="empty">No hay pedidos listos para entregar</div>';return;}
+  const porLoc={};
+  listos.forEach(p=>{if(!porLoc[p.localidad])porLoc[p.localidad]=[];porLoc[p.localidad].push(p);});
+  div.innerHTML=Object.entries(porLoc).map(([loc,ords])=>`
+    <div class="loc-header">📍 ${loc} <span style="font-size:12px;opacity:.8">(${ords.length} pedidos)</span></div>
+    ${ords.map(p=>`
+      <div class="print-order">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div><div style="font-weight:700;font-size:14px">${p.nombre}</div><div style="font-size:12px;color:var(--tm)">📱 ${p.celular}</div></div>
+          <div style="text-align:right"><div style="font-weight:800;color:var(--gd);font-size:16px">${p.valor?fmt$(p.valor):'—'}</div><div style="font-size:11px;color:var(--tl)">#${p.codigo}</div></div>
+        </div>
+        <div style="font-size:13px;color:var(--tm)">📍 ${p.direccion}${p.apto?' · '+p.apto:''}, ${p.barrio}</div>
+        ${p.referencia?`<div style="font-size:12px;color:var(--tl)">🏠 ${p.referencia}</div>`:''}
+        ${p.gps?`<a href="${p.gps}" target="_blank" style="font-size:12px;color:var(--gl);font-weight:700;text-decoration:none">🗺️ GPS</a>`:''}
+        <div style="font-size:12px;color:var(--tm)">🕐 ${p.horario||'Sin horario'}</div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--gp)">
+          ${splitProds(p.productos).map(pr=>`<div style="font-size:12px">• ${pr.trim()}</div>`).join('')}
+        </div>
+        ${p.yapa?`<div style="background:#fff8e1;border-radius:6px;padding:6px 8px;margin-top:6px;font-size:12px;color:#7c6000">🎁 Yapa: ${p.yapa}</div>`:''}
+        <div style="margin-top:8px;font-size:12px;color:var(--tl)">Entrega confirmada: ☐ &nbsp;&nbsp; Firma: ___________</div>
+      </div>`).join('')}
+  `).join('');
 }
-function fmt(d){return Utilities.formatDate(d,Session.getScriptTimeZone(),'dd/MM/yyyy HH:mm');}
-function fmtD(d){return Utilities.formatDate(d,Session.getScriptTimeZone(),'dd/MM/yyyy');}
-function addMeses(d,m){const r=new Date(d);r.setMonth(r.getMonth()+m);return r;}
+
+// ── DETALLE PEDIDO ────────────────────────────
+function abrirPedido(codigo){
+  pActual=pedidos.find(p=>p.codigo===codigo);
+  if(!pActual)return;
+  const p=pActual;
+  checked={};yapaChecked={};
+
+  $('p-code').textContent='#'+p.codigo+' · '+p.fecha;
+  $('p-nombre').textContent=p.nombre;
+  $('p-tel').textContent='📱 '+p.celular+' · '+p.localidad;
+
+  const prods=splitProds(p.productos);
+  const yapaActual=(p.yapa||'').split(',').map(s=>s.trim()).filter(Boolean);
+
+  // Pre-marcar yapa existente
+  prods.forEach((pr,i)=>{
+    const base=pr.split(':')[0].trim();
+    if(yapaActual.some(y=>y.toLowerCase().includes(base.toLowerCase())))yapaChecked[i]=true;
+  });
+
+  const checklist=prods.map((pr,i)=>`
+    <div class="check-row" id="crow-${i}">
+      <div class="chk" id="chk-${i}" onclick="toggleChk(${i},'${escQ(pr)}')"></div>
+      <span class="clabel" id="clabel-${i}">${pr}</span>
+    </div>`).join('');
+
+  const yapaList=prods.map((pr,i)=>`
+    <div class="yapa-row">
+      <div class="ychk ${yapaChecked[i]?'on':''}" id="ychk-${i}" onclick="toggleYapa(${i},'${escQ(pr.split(':')[0].trim())}')">
+        ${yapaChecked[i]?'🎁':''}
+      </div>
+      <span style="font-size:13px;color:var(--tx)">${pr}</span>
+    </div>`).join('');
+
+  const estados=['Lista de compra','Por consignación','Pagado','Empacado','Entregado'];
+  const estadoBtns=estados.map(es=>`
+    <button class="ebtn ${p.estado===es?'on':''}" data-e="${es}" onclick="cambiarEstado('${es}')">${es}</button>`).join('');
+
+  $('panel-body').innerHTML=`
+    <div class="sec">
+      <div class="sec-title">📍 Dirección de entrega</div>
+      <div style="font-size:14px;line-height:1.8">
+        <div style="font-weight:600">${p.direccion}${p.apto?' · '+p.apto:''}</div>
+        <div style="color:var(--tm)">${p.barrio}, ${p.localidad}</div>
+        ${p.referencia?`<div style="font-size:13px;color:var(--tl)">📌 ${p.referencia}</div>`:''}
+        ${p.gps?`<a href="${p.gps}" target="_blank" style="color:var(--gl);font-size:13px;font-weight:700;text-decoration:none">🗺️ Ver GPS</a>`:''}
+        <div style="font-size:13px;color:var(--tm)">🕐 ${p.horario||'Sin especificar'}</div>
+        ${p.nota?`<div style="background:#f5f5f5;padding:7px 9px;border-radius:7px;font-size:13px;margin-top:4px">📝 ${p.nota}</div>`:''}
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">✅ Checklist — lo que pidió</div>
+      ${checklist}
+      <div id="chk-prog" style="margin-top:8px;font-size:12px;color:var(--tl);text-align:center">0 / ${prods.length} revisados</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">🎁 ¿Qué le das de yapa?</div>
+      <p style="font-size:12px;color:var(--tl);margin-bottom:8px">Selecciona los productos que le vas a dar de regalo</p>
+      ${yapaList}
+      <div id="yapa-resumen" style="margin-top:8px;background:#fff8e1;border-radius:8px;padding:8px 10px;font-size:12px;color:#7c6000;display:${yapaActual.length?'block':'none'}">
+        🎁 <span id="yapa-txt">${yapaActual.join(', ')}</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">💰 Valor total a cobrar</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:22px;font-weight:800;color:var(--gd)">$</span>
+        <input class="inp" id="inp-valor" type="number" placeholder="Ingresa el valor" value="${p.valor||''}"
+          style="font-size:20px;font-weight:700;flex:1;border-width:2px;border-color:${p.valor?'var(--gl)':'var(--br)'}"
+          oninput="actualizarSummaryCard()">
+        <span style="font-size:14px;color:var(--tl)">COP</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">📌 Estado del pedido</div>
+      <div class="estado-grid">${estadoBtns}</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">📸 Tarjeta resumen (fotografía y envía)</div>
+      <div class="summary-card" id="sc">
+        <div style="font-size:10px;opacity:.65;letter-spacing:1.5px;text-transform:uppercase">Smart Shopper · #${p.codigo}</div>
+        <div style="font-size:17px;font-weight:800;margin:3px 0">${p.nombre}</div>
+        <div style="font-size:12px;opacity:.8;margin-bottom:10px">📍 ${p.barrio}, ${p.localidad}</div>
+        ${prods.map(pr=>`<div class="sc-prod"><span>${pr.split(':')[0]}</span><span style="font-weight:700">${(pr.split(':')[1]||'').trim()}</span></div>`).join('')}
+        <div id="sc-yapa"></div>
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.25);display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;opacity:.75">Total a pagar</span>
+          <span style="font-size:22px;font-weight:900" id="sc-valor">${p.valor?fmt$(p.valor):'Por confirmar'}</span>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--tl);text-align:center;margin-bottom:6px">📸 Toma captura de esta tarjeta para enviar al cliente</p>
+    </div>
+
+    <div class="gap8" style="margin-bottom:24px">
+      <button class="btn btn-g" id="btn-guardar" onclick="guardarCambios()">💾 Guardar y volver al listado</button>
+      <a class="btn btn-wa" id="btn-wa-cli" href="#" target="_blank">💬 Enviar resumen al cliente por WhatsApp</a>
+    </div>`;
+
+  // Init yapa resumido
+  actualizarYapaResumen();
+  actualizarWALink();
+  $('panel').classList.add('open');
+}
+
+function escQ(s){return s.replace(/'/g,"\\'").replace(/"/g,'&quot;');}
+
+function cerrarPanel(){
+  $('panel').classList.remove('open');
+  pActual=null;checked={};yapaChecked={};
+}
+
+// Checklist toggle
+function toggleChk(i,prod){
+  checked[i]=!checked[i];
+  const chk=$('chk-'+i),lbl=$('clabel-'+i);
+  if(checked[i]){chk.classList.add('done');chk.textContent='✓';lbl.classList.add('done');}
+  else{chk.classList.remove('done');chk.textContent='';lbl.classList.remove('done');}
+  const done=Object.values(checked).filter(Boolean).length;
+  const total=Object.keys(checked).length||splitProds(pActual.productos).length;
+  $('chk-prog').textContent=`${done} / ${splitProds(pActual.productos).length} revisados`;
+}
+
+// Yapa toggle
+function toggleYapa(i,prod){
+  yapaChecked[i]=!yapaChecked[i];
+  const y=$('ychk-'+i);
+  y.classList.toggle('on',yapaChecked[i]);
+  y.textContent=yapaChecked[i]?'🎁':'';
+  actualizarYapaResumen();
+  actualizarSummaryCard();
+  actualizarWALink();
+}
+function actualizarYapaResumen(){
+  const prods=splitProds(pActual.productos).map(pr=>pr.split(':')[0].trim());
+  const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>prods[i]).filter(Boolean);
+  const res=$('yapa-resumen'),txt=$('yapa-txt');
+  if(res&&txt){res.style.display=sel.length?'block':'none';txt.textContent=sel.join(', ');}
+}
+function actualizarSummaryCard(){
+  const valor=$('inp-valor')?.value||'';
+  const scv=$('sc-valor');if(scv)scv.textContent=valor?fmt$(valor):'Por confirmar';
+  const inp=$('inp-valor');if(inp)inp.style.borderColor=valor?'var(--gl)':'var(--br)';
+  // Yapa en la tarjeta
+  const prods=splitProds(pActual.productos).map(pr=>pr.split(':')[0].trim());
+  const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>prods[i]).filter(Boolean);
+  const scy=$('sc-yapa');
+  if(scy)scy.innerHTML=sel.length?`<div style="margin-top:8px;background:rgba(255,255,255,.15);border-radius:7px;padding:7px 9px;font-size:12px">🎁 Yapa: ${sel.join(', ')}</div>`:'';
+  actualizarWALink();
+}
+function actualizarWALink(){
+  if(!pActual)return;
+  const p=pActual;
+  const prods=splitProds(p.productos);
+  const ypaProds=splitProds(p.productos).map(pr=>pr.split(':')[0].trim());
+  const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>ypaProds[i]).filter(Boolean);
+  const valor=$('inp-valor')?.value||'';
+  const msg=encodeURIComponent([
+    `✅ *Tu pedido #${p.codigo} está listo*`,
+    `👤 ${p.nombre}`,``,
+    `*🛍️ Tu pedido:*`,...prods.map(pr=>`• ${pr}`),
+    sel.length?`\n🎁 *Yapa:* ${sel.join(', ')}`:'',``,
+    `💰 *Total a pagar:* ${valor?fmt$(valor):'Te lo confirmamos pronto'}`,``,
+    `📍 ${p.direccion}${p.apto?' · '+p.apto:''}, ${p.barrio}`,
+    `🕐 ${p.horario||''}`,``,
+    `_Smart Shopper — Mercado inteligente, fresco y saludable_ 🌿`
+  ].filter(Boolean).join('\n'));
+  const btn=$('btn-wa-cli');
+  if(btn)btn.href=`https://wa.me/${p.celular}?text=${msg}`;
+}
+
+function cambiarEstado(es){
+  if(!pActual)return;
+  pActual.estado=es;
+  document.querySelectorAll('.ebtn').forEach(b=>b.classList.toggle('on',b.dataset.e===es));
+}
+
+async function guardarCambios(){
+  if(!pActual)return;
+  const prods=splitProds(pActual.productos).map(pr=>pr.split(':')[0].trim());
+  const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>prods[i]).filter(Boolean);
+  const valor=$('inp-valor')?.value||'';
+  const yapa=sel.join(', ');
+  pActual.valor=valor;pActual.yapa=yapa;
+  // Actualizar en array local
+  const idx=pedidos.findIndex(p=>p.codigo===pActual.codigo);
+  if(idx>=0)pedidos[idx]={...pActual};
+  if(WEBHOOK){
+    const params=new URLSearchParams({
+      accion:'actualizarPedido', codigo:pActual.codigo,
+      estado:pActual.estado, valor, yapa, celular:pActual.celular
+    });
+    fetch(WEBHOOK+'?'+params.toString()).catch(()=>{});
+  }
+  cerrarPanel();
+  renderLista();
+}
+
+async function activarDomicilios(){
+  const cel=$('dom-cel').value.trim(),cant=$('dom-cant').value.trim();
+  if(!cel||!cant){alert('Completa celular y cantidad');return;}
+  if(!WEBHOOK){alert('Configura el webhook primero');return;}
+  try{
+    await fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({accion:'actualizar',codigo:'manual',estado:'Pagado',celular:cel,domicilios:Number(cant)})});
+    alert(`✅ ${cant} domicilios activados para ${cel}`);
+    $('dom-cel').value='';$('dom-cant').value='';
+  }catch(e){alert('⚠️ '+e.message);}
+}
+
+// ── VENTAS ────────────────────────────────────
+async function cargarVentas(){
+  if(!WEBHOOK){renderVentasDemo();return;}
+  try{
+    const r=await fetch(WEBHOOK+'?accion=ventas');
+    const d=await r.json();
+    renderVentas(d.ventas||{filas:[],totales:{}});
+  }catch(e){$('ventas-lista').innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
+}
+function renderVentasDemo(){
+  renderVentas({
+    filas:[
+      {fecha:'01/05/2026',codigo:'SS1A2B',cliente:'María García',localidad:'Suba',valor:87000,comision:5000,neto:82000,mes:'mayo 2026'},
+      {fecha:'01/05/2026',codigo:'SS3C4D',cliente:'Carlos Ruiz',localidad:'Usaquén',valor:65000,comision:4000,neto:61000,mes:'mayo 2026'}
+    ],
+    totales:{totalVentas:152000,totalComisiones:9000,totalNeto:143000,numPedidos:2}
+  });
+}
+function renderVentas(data){
+  const kpis=$('ventas-kpis'),lista=$('ventas-lista');
+  const t=data.totales||{};
+  kpis.innerHTML=[
+    {label:'Total ventas',val:'$'+Number(t.totalVentas||0).toLocaleString('es-CO'),color:'#e8f5e9'},
+    {label:'Comisiones plaza',val:'$'+Number(t.totalComisiones||0).toLocaleString('es-CO'),color:'#fff8e1'},
+    {label:'Ingreso neto',val:'$'+Number(t.totalNeto||0).toLocaleString('es-CO'),color:'#e3f2fd'},
+    {label:'Pedidos entregados',val:t.numPedidos||0,color:'#f3e5f5'}
+  ].map(k=>`<div style="background:${k.color};border-radius:10px;padding:12px;text-align:center"><div style="font-size:11px;color:var(--tl);font-weight:600;margin-bottom:4px">${k.label}</div><div style="font-size:18px;font-weight:800;color:var(--gd)">${k.val}</div></div>`).join('');
+  if(!data.filas?.length){lista.innerHTML='<div class="empty">Sin ventas registradas aún</div>';return;}
+  lista.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+    <tr style="background:var(--gp);font-weight:700">${['Fecha','#','Cliente','Localidad','Valor','Comisión','Neto'].map(h=>`<td style="padding:7px 8px">${h}</td>`).join('')}</tr>
+    ${data.filas.map((r,i)=>`<tr style="background:${i%2?'#f9f9f9':'white'};border-bottom:1px solid #eee">
+      <td style="padding:6px 8px;white-space:nowrap">${r.fecha}</td>
+      <td style="padding:6px 8px;font-weight:700;color:var(--gd)">${r.codigo}</td>
+      <td style="padding:6px 8px">${r.cliente}</td>
+      <td style="padding:6px 8px">${r.localidad}</td>
+      <td style="padding:6px 8px;font-weight:700">$${Number(r.valor||0).toLocaleString('es-CO')}</td>
+      <td style="padding:6px 8px;color:#f57f17">$${Number(r.comision||0).toLocaleString('es-CO')}</td>
+      <td style="padding:6px 8px;color:var(--gl);font-weight:700">$${Number(r.neto||0).toLocaleString('es-CO')}</td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+async function guardarComision(){
+  const cod=$('com-codigo').value.trim(),val=$('com-valor').value.trim();
+  if(!cod||!val){alert('Completa código y valor');return;}
+  if(!WEBHOOK){alert('Configura el webhook');return;}
+  await fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({accion:'actualizar',codigo:cod,comision:Number(val)})});
+  alert('✅ Comisión guardada');
+  $('com-codigo').value='';$('com-valor').value='';
+  cargarVentas();
+}
+
+// ── ANÁLISIS ──────────────────────────────────
+async function cargarAnalisis(){
+  if(!WEBHOOK){renderAnalisis([
+    {producto:'Papa Criolla',categoria:'🥦 Verduras',total:24,esteMes:8,mesAnterior:7,tendencia:'↑ Sube',unidad:'g'},
+    {producto:'Aguacate Hass',categoria:'🍎 Frutas',total:18,esteMes:6,mesAnterior:8,tendencia:'↓ Baja',unidad:'u'},
+    {producto:'Mora',categoria:'🍎 Frutas',total:15,esteMes:5,mesAnterior:4,tendencia:'↑ Sube',unidad:'g'},
+    {producto:'Cilantro',categoria:'🥦 Verduras',total:12,esteMes:4,mesAnterior:3,tendencia:'↑ Sube',unidad:'u'},
+    {producto:'Tomate Chonto',categoria:'🥦 Verduras',total:10,esteMes:3,mesAnterior:4,tendencia:'↓ Baja',unidad:'g'}
+  ]);return;}
+  try{
+    const r=await fetch(WEBHOOK+'?accion=analisis');
+    const d=await r.json();
+    renderAnalisis(d.analisis||[]);
+  }catch(e){$('analisis-lista').innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
+}
+function renderAnalisis(data){
+  const lista=$('analisis-lista');
+  if(!data.length){lista.innerHTML='<div class="empty">Sin datos aún. Los datos se acumulan con cada pedido.</div>';return;}
+  lista.innerHTML=data.map(p=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gp)">
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:14px">${p.producto}</div>
+        <div style="font-size:11px;color:var(--tl)">${p.categoria} · ${p.unidad==='g'?'Gramos':'Unidad'}</div>
+      </div>
+      <div style="text-align:center;min-width:50px">
+        <div style="font-size:18px;font-weight:800;color:var(--gd)">${p.total}</div>
+        <div style="font-size:10px;color:var(--tl)">total</div>
+      </div>
+      <div style="text-align:center;min-width:44px">
+        <div style="font-size:14px;font-weight:700;color:var(--gl)">${p.esteMes}</div>
+        <div style="font-size:10px;color:var(--tl)">mes</div>
+      </div>
+      <div style="font-size:16px">${p.tendencia?.includes('Sube')?'📈':'📉'}</div>
+    </div>`).join('');
+}
+
+// ── CATÁLOGO ──────────────────────────────────
+let tipoNuevo='u';
+function setTipo(t){
+  tipoNuevo=t;
+  ['u','g'].forEach(x=>{
+    $('tipo-'+x).classList.toggle('on',x===t);
+    $('tipo-'+x).style.borderColor=x===t?'var(--gm)':'#ddd';
+  });
+}
+async function cargarCatalogo(){
+  if(!WEBHOOK){$('catalogo-lista').innerHTML='<div class="empty">Configura el webhook para ver el catálogo del Sheet</div>';return;}
+  try{
+    const r=await fetch(WEBHOOK+'?accion=catalogo');
+    const d=await r.json();
+    renderCatalogo(d.catalogo||{});
+  }catch(e){$('catalogo-lista').innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
+}
+function renderCatalogo(cat){
+  const lista=$('catalogo-lista');
+  const total=Object.values(cat).flat().length;
+  if(!total){lista.innerHTML='<div class="empty">Catálogo vacío</div>';return;}
+  lista.innerHTML=Object.entries(cat).map(([cat,prods])=>`
+    <div style="margin-bottom:10px">
+      <div style="font-weight:700;color:var(--gd);font-size:13px;margin-bottom:5px">${cat}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${prods.map(p=>`<span style="background:var(--gp);color:var(--gd);padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600">${p.n} <span style="opacity:.6">${p.u==='g'?'grm':'u'}</span></span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+async function agregarProducto(){
+  const nombre=$('cat-nombre').value.trim(),cat=$('cat-cat').value;
+  if(!nombre){alert('Escribe el nombre del producto');return;}
+  if(!WEBHOOK){alert('Configura el webhook. El producto se agrega en la pestaña Catálogo del Sheet.');return;}
+  try{
+    await fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({accion:'agregarProducto',nombre,categoria:cat,tipo:tipoNuevo})});
+    alert(`✅ "${nombre}" agregado. Aparecerá en la app al recargar.`);
+    $('cat-nombre').value='';
+    cargarCatalogo();
+  }catch(e){alert('⚠️ '+e.message);}
+}
+
+// Auto-refresh
+function startAutoRefresh(){
+  if(autoRefreshTimer)clearInterval(autoRefreshTimer);
+  autoRefreshTimer=setInterval(()=>{if(!$('panel').classList.contains('open'))cargarPedidos();},90000);
+}
+
+loadConfig();
+cargarListaSus();
+startAutoRefresh();
+</script>
+</body>
+</html>
