@@ -740,10 +740,26 @@ function bindE(){
     const order={date:new Date().toISOString(),code:S.code,items:ci().map(([p,{qty,unit}])=>({product:p,qty,unit})),delivery:{...S.del}};
     S.client.orders=[...(S.client.orders||[]),order];
     S.client.lastDelivery={...S.del};
-    // Decrementar domicilios disponibles
     if((S.client.deliveries||0)>0)S.client.deliveries--;
-    S.customers[S.client.phone]=S.client;await save(S.customers);
-    if(WEBHOOK){try{await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({timestamp:order.date,codigo:S.code,nombre:S.del.nombre,celular:S.client.phone,localidad:S.del.localidad,barrio:S.del.barrio,direccion:S.del.dir,apto:S.del.apto,referencia:S.del.ref,gps:S.del.mapsLink,horario:S.del.horario,nota:S.del.nota,productos:ci().map(([p,{qty,unit}])=>`${p}: ${qty} ${unit}`).join(' | '),total_items:cc(),domicilios_restantes:S.client.deliveries||0})});}catch(e){}}
+    S.customers[S.client.phone]=S.client;
+    await save(S.customers);
+    // Enviar al Sheet en background — no esperamos respuesta (evita CORS)
+    if(WEBHOOK){
+      const payload=JSON.stringify({
+        timestamp:order.date,codigo:S.code,
+        nombre:S.del.nombre,celular:S.client.phone,
+        localidad:S.del.localidad,barrio:S.del.barrio,
+        direccion:S.del.dir,apto:S.del.apto,
+        referencia:S.del.ref,gps:S.del.mapsLink,
+        horario:S.del.horario,nota:S.del.nota,
+        productos:ci().map(([p,{qty,unit}])=>`${p}: ${qty} ${unit}`).join(' | '),
+        total_items:cc(),domicilios_restantes:S.client.deliveries||0
+      });
+      // Usar no-cors para evitar el bloqueo CORS en POST
+      fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:payload})
+        .catch(()=>{});
+    }
+    // Avanzar inmediatamente sin esperar respuesta del Sheet
     S.sending=false;S.screen='success';render();
   };
 
