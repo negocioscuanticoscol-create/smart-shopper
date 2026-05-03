@@ -540,21 +540,6 @@ function rSuccess(){
       ${items.map(([n,{qty,unit}])=>`<div class="srow"><span style="flex:1">${n}</span><span class="sqty">${qty} ${unit}</span></div>`).join('')}
     </div>
 
-    <div class="card" style="margin:0 16px 14px">
-      <div class="ctitle">📸 Foto de entrega</div>
-      <p style="font-size:13px;color:var(--tl);margin-bottom:12px">Cuando recibas tu pedido toma una foto y envíanosla como comprobante de entrega</p>
-      <div id="foto-preview" style="display:none;margin-bottom:10px">
-        <img id="foto-img" style="width:100%;border-radius:10px;object-fit:cover;max-height:220px" alt="Foto de entrega">
-      </div>
-      <label style="display:block;width:100%;padding:12px;border:2px dashed var(--br);border-radius:10px;text-align:center;cursor:pointer;font-size:14px;font-weight:600;color:var(--tm);background:var(--gs)">
-        📷 Tomar o elegir foto
-        <input type="file" accept="image/*" capture="environment" id="foto-input" style="display:none" onchange="previewFoto(this)">
-      </label>
-      <button id="btn-send-foto" class="btn btn-wa" style="margin-top:10px;display:none" onclick="enviarFoto()">
-        📲 Enviar foto por WhatsApp
-      </button>
-    </div>
-
     <div style="padding:0 16px" class="gap10">
       <a href="https://wa.me/${WA}?text=${waTxt}" class="btn btn-wa" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">💬 Confirmar por WhatsApp</a>
       <button class="btn btn-o" id="bseguir">🛒 Seguir comprando</button>
@@ -790,8 +775,10 @@ function bindE(){
           +'&domicilios_restantes='+snapDeliveries
           +'&timestamp='+encodeURIComponent(new Date().toISOString())
           +prodParams;
-        const img=new Image();
-        img.src=url;
+        // fetch con timeout — más confiable en celular que Image()
+        const controller=new AbortController();
+        setTimeout(()=>controller.abort(),8000);
+        fetch(url,{signal:controller.signal}).catch(()=>{});
       }
     }catch(e){}
   };
