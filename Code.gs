@@ -101,10 +101,13 @@ function crearPedidos(ss) {
   s.setFrozenRows(1); s.setColumnWidth(12, 320);
 }
 function normProds(raw) {
-  // Soporta separador ~~ (GET) y | (legacy POST)
   const r = String(raw||'');
+  // Limpiar ~~ si viene del formato antiguo
   if(r.indexOf('~~')>-1)
-    return r.split('~~').map(p=>{const i=p.indexOf(':');return i>-1?p.slice(0,i)+': '+p.slice(i+1):p;}).join(' | ');
+    return r.split('~~').map(p=>{
+      const i=p.indexOf(':');
+      return i>-1 ? p.slice(0,i)+': '+p.slice(i+1) : p;
+    }).join(' | ');
   return r;
 }
 function escribirPedido(ss, d) {
