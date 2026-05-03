@@ -747,29 +747,38 @@ function bindE(){
     S.screen='success';
     render();
 
-    // Guardar y enviar al Sheet totalmente en background
-    save(S.customers).catch(()=>{});
+    // Enviar al Sheet con form oculto — sin restricciones CORS en ningún browser
     if(WEBHOOK && snapItems.length>0){
-      let q='?accion=nuevoPedido'
-        +'&codigo='+encodeURIComponent(orderCode)
-        +'&nombre='+encodeURIComponent(snapDel.nombre||'')
-        +'&celular='+encodeURIComponent(snapPhone)
-        +'&localidad='+encodeURIComponent(snapDel.localidad||'')
-        +'&barrio='+encodeURIComponent(snapDel.barrio||'')
-        +'&direccion='+encodeURIComponent(snapDel.dir||'')
-        +'&apto='+encodeURIComponent(snapDel.apto||'')
-        +'&referencia='+encodeURIComponent(snapDel.ref||'')
-        +'&horario='+encodeURIComponent(snapDel.horario||'')
-        +'&nota='+encodeURIComponent(snapDel.nota||'')
-        +'&total_items='+snapItems.length
-        +'&domicilios_restantes='+snapDeliveries
-        +'&timestamp='+encodeURIComponent(new Date().toISOString());
-      snapItems.forEach((it,i)=>{
-        q+='&p'+i+'='+encodeURIComponent(it.product||'')
-          +'&q'+i+'='+encodeURIComponent(String(it.qty||''))
-          +'&u'+i+'='+encodeURIComponent(it.unit||'');
-      });
-      fetch(WEBHOOK+q).catch(()=>{});
+      try{
+        // Crear iframe oculto receptor
+        let fr=document.getElementById('ss_fr');
+        if(!fr){fr=document.createElement('iframe');fr.name='ss_fr';fr.id='ss_fr';fr.style.cssText='display:none;width:0;height:0;border:none;position:absolute;left:-9999px';document.body.appendChild(fr);}
+        // Crear form que envía al iframe
+        const fm=document.createElement('form');
+        fm.method='GET';
+        fm.action=WEBHOOK;
+        fm.target='ss_fr';
+        fm.style.display='none';
+        const addField=(k,v)=>{const inp=document.createElement('input');inp.type='hidden';inp.name=k;inp.value=v;fm.appendChild(inp);};
+        addField('accion','nuevoPedido');
+        addField('codigo',orderCode);
+        addField('nombre',snapDel.nombre||'');
+        addField('celular',snapPhone);
+        addField('localidad',snapDel.localidad||'');
+        addField('barrio',snapDel.barrio||'');
+        addField('direccion',snapDel.dir||'');
+        addField('apto',snapDel.apto||'');
+        addField('referencia',snapDel.ref||'');
+        addField('horario',snapDel.horario||'');
+        addField('nota',snapDel.nota||'');
+        addField('total_items',String(snapItems.length));
+        addField('domicilios_restantes',String(snapDeliveries));
+        addField('timestamp',new Date().toISOString());
+        snapItems.forEach((it,i)=>{addField('p'+i,it.product||'');addField('q'+i,String(it.qty||''));addField('u'+i,it.unit||'');});
+        document.body.appendChild(fm);
+        fm.submit();
+        setTimeout(()=>{try{document.body.removeChild(fm);}catch(e){}},3000);
+      }catch(e){}
     }
   };
 
