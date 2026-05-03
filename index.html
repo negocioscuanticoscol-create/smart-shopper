@@ -761,7 +761,7 @@ function bindE(){
       try{
         if(!WEBHOOK||!S.code)return;
         const savedItems=S.client?.orders?.slice(-1)[0]?.items||[];
-        const prods=savedItems.map(i=>i.product+': '+i.qty+' '+i.unit).join(' | ');
+        const prods=savedItems.map(i=>i.product+'::'+i.qty+'::'+i.unit).join(';;;');
         const prodsEnc=encodeURIComponent(prods);
         const d=S.del||{};
         const url=WEBHOOK
