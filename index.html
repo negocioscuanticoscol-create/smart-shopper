@@ -761,12 +761,17 @@ function bindE(){
       try{
         if(!WEBHOOK||!S.code)return;
         const savedItems=S.client?.orders?.slice(-1)[0]?.items||[];
-        const prods=savedItems.map(i=>i.product+'::'+i.qty+'::'+i.unit).join(';;;');
-        const prodsEnc=encodeURIComponent(prods);
         const d=S.del||{};
+        // Cada producto como parámetro separado p0,q0,u0 p1,q1,u1...
+        let prodParams='';
+        savedItems.forEach((it,i)=>{
+          prodParams+='&p'+i+'='+encodeURIComponent(it.product||'')
+                     +'&q'+i+'='+encodeURIComponent(String(it.qty||''))
+                     +'&u'+i+'='+encodeURIComponent(it.unit||'');
+        });
         const url=WEBHOOK
           +'?accion=nuevoPedido'
-          +'&codigo='+S.code
+          +'&codigo='+encodeURIComponent(S.code)
           +'&nombre='+encodeURIComponent(d.nombre||'')
           +'&celular='+encodeURIComponent(S.client?.phone||S.phone||'')
           +'&localidad='+encodeURIComponent(d.localidad||'')
@@ -776,10 +781,10 @@ function bindE(){
           +'&referencia='+encodeURIComponent(d.ref||'')
           +'&horario='+encodeURIComponent(d.horario||'')
           +'&nota='+encodeURIComponent(d.nota||S.note||'')
-          +'&productos='+prodsEnc
           +'&total_items='+savedItems.length
           +'&domicilios_restantes='+(S.client?.deliveries||0)
-          +'&timestamp='+encodeURIComponent(new Date().toISOString());
+          +'&timestamp='+encodeURIComponent(new Date().toISOString())
+          +prodParams;
         const img=new Image();
         img.src=url;
       }catch(e){}
