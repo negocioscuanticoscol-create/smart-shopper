@@ -743,23 +743,32 @@ function bindE(){
     if((S.client.deliveries||0)>0)S.client.deliveries--;
     S.customers[S.client.phone]=S.client;
     await save(S.customers);
-    // Enviar al Sheet via GET — nunca bloqueado por CORS
+    // Enviar al Sheet via iframe GET — funciona con URLs largas sin CORS
     if(WEBHOOK){
+      const prods=ci().map(([p,{qty,unit}])=>`${p}:${qty}${unit}`).join('~~');
       const params=new URLSearchParams({
         accion:'nuevoPedido',
-        timestamp:order.date, codigo:S.code,
-        nombre:S.del.nombre, celular:S.client.phone,
-        localidad:S.del.localidad, barrio:S.del.barrio,
-        direccion:S.del.dir, apto:S.del.apto||'',
-        referencia:S.del.ref||'', gps:S.del.mapsLink||'',
-        horario:S.del.horario||'', nota:S.del.nota||'',
-        productos:ci().map(([p,{qty,unit}])=>`${p}: ${qty} ${unit}`).join(' | '),
+        timestamp:order.date,
+        codigo:S.code,
+        nombre:S.del.nombre,
+        celular:S.client.phone,
+        localidad:S.del.localidad,
+        barrio:S.del.barrio,
+        direccion:S.del.dir,
+        apto:S.del.apto||'',
+        referencia:S.del.ref||'',
+        gps:S.del.mapsLink||'',
+        horario:S.del.horario||'',
+        nota:S.del.nota||'',
+        productos:prods,
         total_items:String(cc()),
         domicilios_restantes:String(S.client.deliveries||0)
       });
-      // Usar imagen invisible — nunca falla por CORS
-      const img=new Image();
-      img.src=WEBHOOK+'?'+params.toString();
+      const frame=document.createElement('iframe');
+      frame.style.cssText='display:none;width:0;height:0;border:none';
+      frame.src=WEBHOOK+'?'+params.toString();
+      document.body.appendChild(frame);
+      setTimeout(()=>{try{document.body.removeChild(frame);}catch(e){}},10000);
     }
     // Avanzar inmediatamente sin esperar respuesta del Sheet
     S.sending=false;S.screen='success';render();
