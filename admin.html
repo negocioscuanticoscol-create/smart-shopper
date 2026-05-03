@@ -560,6 +560,19 @@ function setFiltro(f,btn){
   renderLista();
 }
 
+
+// Helper: split productos string regardless of separator
+function splitProds(str) {
+  if(!str) return [];
+  if(str.indexOf(' | ')>-1) return str.split(' | ').map(s=>s.trim()).filter(Boolean);
+  if(str.indexOf('|')>-1) return str.split('|').map(s=>s.trim()).filter(Boolean);
+  if(str.indexOf(';;;')>-1) return str.split(';;;').map(p=>{
+    const parts=p.split('::');
+    return parts.length>=3?parts[0]+': '+parts[1]+' '+parts[2]:p;
+  }).filter(Boolean);
+  return [str];
+}
+
 // ── COLORES POR ESTADO ────────────────────────
 function eClass(e){return({
   'Lista de compra':'e-lista','Por consignación':'e-consignacion',
@@ -659,7 +672,7 @@ function renderEntrega(){
         ${p.gps?`<a href="${p.gps}" target="_blank" style="font-size:12px;color:var(--gl);font-weight:700;text-decoration:none">🗺️ GPS</a>`:''}
         <div style="font-size:12px;color:var(--tm)">🕐 ${p.horario||'Sin horario'}</div>
         <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--gp)">
-          ${p.productos.split('|').map(pr=>`<div style="font-size:12px">• ${pr.trim()}</div>`).join('')}
+          ${splitProds(p.productos).map(pr=>`<div style="font-size:12px">• ${pr.trim()}</div>`).join('')}
         </div>
         ${p.yapa?`<div style="background:#fff8e1;border-radius:6px;padding:6px 8px;margin-top:6px;font-size:12px;color:#7c6000">🎁 Yapa: ${p.yapa}</div>`:''}
         <div style="margin-top:8px;font-size:12px;color:var(--tl)">Entrega confirmada: ☐ &nbsp;&nbsp; Firma: ___________</div>
@@ -678,7 +691,7 @@ function abrirPedido(codigo){
   $('p-nombre').textContent=p.nombre;
   $('p-tel').textContent='📱 '+p.celular+' · '+p.localidad;
 
-  const prods=p.productos.split('|').map(pr=>pr.trim()).filter(Boolean);
+  const prods=splitProds(p.productos);
   const yapaActual=(p.yapa||'').split(',').map(s=>s.trim()).filter(Boolean);
 
   // Pre-marcar yapa existente
@@ -790,8 +803,8 @@ function toggleChk(i,prod){
   if(checked[i]){chk.classList.add('done');chk.textContent='✓';lbl.classList.add('done');}
   else{chk.classList.remove('done');chk.textContent='';lbl.classList.remove('done');}
   const done=Object.values(checked).filter(Boolean).length;
-  const total=Object.keys(checked).length||pActual.productos.split('|').length;
-  $('chk-prog').textContent=`${done} / ${pActual.productos.split('|').length} revisados`;
+  const total=Object.keys(checked).length||splitProds(pActual.productos).length;
+  $('chk-prog').textContent=`${done} / ${splitProds(pActual.productos).length} revisados`;
 }
 
 // Yapa toggle
@@ -805,7 +818,7 @@ function toggleYapa(i,prod){
   actualizarWALink();
 }
 function actualizarYapaResumen(){
-  const prods=pActual.productos.split('|').map(pr=>pr.split(':')[0].trim());
+  const prods=splitProds(pActual.productos).map(pr=>pr.split(':')[0].trim());
   const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>prods[i]).filter(Boolean);
   const res=$('yapa-resumen'),txt=$('yapa-txt');
   if(res&&txt){res.style.display=sel.length?'block':'none';txt.textContent=sel.join(', ');}
@@ -815,7 +828,7 @@ function actualizarSummaryCard(){
   const scv=$('sc-valor');if(scv)scv.textContent=valor?fmt$(valor):'Por confirmar';
   const inp=$('inp-valor');if(inp)inp.style.borderColor=valor?'var(--gl)':'var(--br)';
   // Yapa en la tarjeta
-  const prods=pActual.productos.split('|').map(pr=>pr.split(':')[0].trim());
+  const prods=splitProds(pActual.productos).map(pr=>pr.split(':')[0].trim());
   const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>prods[i]).filter(Boolean);
   const scy=$('sc-yapa');
   if(scy)scy.innerHTML=sel.length?`<div style="margin-top:8px;background:rgba(255,255,255,.15);border-radius:7px;padding:7px 9px;font-size:12px">🎁 Yapa: ${sel.join(', ')}</div>`:'';
@@ -824,8 +837,8 @@ function actualizarSummaryCard(){
 function actualizarWALink(){
   if(!pActual)return;
   const p=pActual;
-  const prods=p.productos.split('|').map(pr=>pr.trim()).filter(Boolean);
-  const ypaProds=p.productos.split('|').map(pr=>pr.split(':')[0].trim());
+  const prods=splitProds(p.productos);
+  const ypaProds=splitProds(p.productos).map(pr=>pr.split(':')[0].trim());
   const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>ypaProds[i]).filter(Boolean);
   const valor=$('inp-valor')?.value||'';
   const msg=encodeURIComponent([
@@ -850,7 +863,7 @@ function cambiarEstado(es){
 
 async function guardarCambios(){
   if(!pActual)return;
-  const prods=pActual.productos.split('|').map(pr=>pr.split(':')[0].trim());
+  const prods=splitProds(pActual.productos).map(pr=>pr.split(':')[0].trim());
   const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>prods[i]).filter(Boolean);
   const valor=$('inp-valor')?.value||'';
   const yapa=sel.join(', ');
