@@ -717,70 +717,60 @@ function bindE(){
 
   const bts=$('btosummary');if(bts)bts.onclick=()=>{S.screen='summary';render();};
 
-  // Confirm
+  // Confirm — SIEMPRE muestra éxito inmediato, sheet en background puro
   const bc=$('bconfirm');
-  if(bc)bc.onclick=async()=>{
+  if(bc)bc.onclick=()=>{
     if(S.sending)return;
     S.sending=true;
-    bc.textContent='⏳ Procesando...';
-    bc.disabled=true;
 
-    // Capturar TODOS los datos ANTES de cualquier cambio de estado
+    // Capturar todo antes de cualquier cambio
     const orderCode=gc();
     S.code=orderCode;
     const snapItems=ci().map(([p,{qty,unit}])=>({product:p,qty,unit}));
     const snapDel={...S.del};
     const snapPhone=S.client?.phone||S.phone||'';
-    const snapDeliveries=(S.client?.deliveries||0)>0?(S.client.deliveries-1):0;
+    const snapDeliveries=Math.max(0,(S.client?.deliveries||0)-1);
 
-    // Guardar localmente
-    try{
-      const order={date:new Date().toISOString(),code:orderCode,items:snapItems,delivery:snapDel};
-      if(S.client){
-        S.client.orders=[...(S.client.orders||[]),order];
-        S.client.lastDelivery=snapDel;
-        S.client.deliveries=snapDeliveries;
-        S.customers[snapPhone]=S.client;
-      }
-      try{await save(S.customers);}catch(e){}
-    }catch(e){}
+    // Guardar local síncronamente
+    if(S.client){
+      S.client.orders=[...(S.client.orders||[]),{
+        date:new Date().toISOString(),code:orderCode,
+        items:snapItems,delivery:snapDel
+      }];
+      S.client.lastDelivery=snapDel;
+      S.client.deliveries=snapDeliveries;
+      S.customers[snapPhone]=S.client;
+    }
 
-    // Avanzar a éxito INMEDIATAMENTE
+    // Ir a éxito INMEDIATAMENTE — sin await, sin async
     S.sending=false;
     S.screen='success';
     render();
 
-    // Enviar al Sheet con los datos capturados antes del render
-    try{
-      if(WEBHOOK && snapItems.length>0){
-        let prodParams='';
-        snapItems.forEach((it,i)=>{
-          prodParams+='&p'+i+'='+encodeURIComponent(it.product||'')
-                     +'&q'+i+'='+encodeURIComponent(String(it.qty||''))
-                     +'&u'+i+'='+encodeURIComponent(it.unit||'');
-        });
-        const url=WEBHOOK
-          +'?accion=nuevoPedido'
-          +'&codigo='+encodeURIComponent(orderCode)
-          +'&nombre='+encodeURIComponent(snapDel.nombre||'')
-          +'&celular='+encodeURIComponent(snapPhone)
-          +'&localidad='+encodeURIComponent(snapDel.localidad||'')
-          +'&barrio='+encodeURIComponent(snapDel.barrio||'')
-          +'&direccion='+encodeURIComponent(snapDel.dir||'')
-          +'&apto='+encodeURIComponent(snapDel.apto||'')
-          +'&referencia='+encodeURIComponent(snapDel.ref||'')
-          +'&horario='+encodeURIComponent(snapDel.horario||'')
-          +'&nota='+encodeURIComponent(snapDel.nota||'')
-          +'&total_items='+snapItems.length
-          +'&domicilios_restantes='+snapDeliveries
-          +'&timestamp='+encodeURIComponent(new Date().toISOString())
-          +prodParams;
-        // fetch con timeout — más confiable en celular que Image()
-        const controller=new AbortController();
-        setTimeout(()=>controller.abort(),8000);
-        fetch(url,{signal:controller.signal}).catch(()=>{});
-      }
-    }catch(e){}
+    // Guardar y enviar al Sheet totalmente en background
+    save(S.customers).catch(()=>{});
+    if(WEBHOOK && snapItems.length>0){
+      let q='?accion=nuevoPedido'
+        +'&codigo='+encodeURIComponent(orderCode)
+        +'&nombre='+encodeURIComponent(snapDel.nombre||'')
+        +'&celular='+encodeURIComponent(snapPhone)
+        +'&localidad='+encodeURIComponent(snapDel.localidad||'')
+        +'&barrio='+encodeURIComponent(snapDel.barrio||'')
+        +'&direccion='+encodeURIComponent(snapDel.dir||'')
+        +'&apto='+encodeURIComponent(snapDel.apto||'')
+        +'&referencia='+encodeURIComponent(snapDel.ref||'')
+        +'&horario='+encodeURIComponent(snapDel.horario||'')
+        +'&nota='+encodeURIComponent(snapDel.nota||'')
+        +'&total_items='+snapItems.length
+        +'&domicilios_restantes='+snapDeliveries
+        +'&timestamp='+encodeURIComponent(new Date().toISOString());
+      snapItems.forEach((it,i)=>{
+        q+='&p'+i+'='+encodeURIComponent(it.product||'')
+          +'&q'+i+'='+encodeURIComponent(String(it.qty||''))
+          +'&u'+i+'='+encodeURIComponent(it.unit||'');
+      });
+      fetch(WEBHOOK+q).catch(()=>{});
+    }
   };
 
   // Success — seguir comprando siempre funciona
