@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1b4332">
+<title>Smart Shopper — Lista de Compra</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{--gd:#1b4332;--gm:#2d6a4f;--gl:#40916c;--gp:#d8f3dc;--gs:#f0faf2;--ac:#ff6b35;--tx:#1a2e1a;--tm:#4a6741;--tl:#7a9e7e;--br:#c5e8c5;--r:16px;--rs:10px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'SF Pro Display','Segoe UI',sans-serif;background:var(--gs);color:var(--tx);min-height:100vh;max-width:430px;margin:0 auto;overflow-x:hidden}
+input,button,textarea,select{font-family:inherit}
+button{cursor:pointer}
+.header{background:linear-gradient(170deg,var(--gd),var(--gm));color:white;padding:46px 20px 22px}
+.brand{font-size:11px;font-weight:700;opacity:.6;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:4px}
+.htitle{font-size:23px;font-weight:800;line-height:1.15}
+.hsub{font-size:13px;opacity:.75;margin-top:3px}
+.card{background:white;border-radius:var(--r);padding:18px;margin:0 16px 14px;box-shadow:0 2px 14px rgba(0,0,0,.06)}
+.ctitle{font-size:14px;font-weight:700;color:var(--gd);margin-bottom:12px}
+.field{margin-bottom:13px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.inp{width:100%;padding:12px 14px;border:1.5px solid var(--br);border-radius:var(--rs);font-size:15px;color:var(--tx);background:white;outline:none;transition:border .2s}
+.inp:focus{border-color:var(--gl)}
+textarea.inp{resize:none;min-height:62px}
+select.inp{appearance:none;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a9e7e' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 12px center no-repeat}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:block;width:100%;padding:14px 20px;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;text-align:center;transition:transform .15s;text-decoration:none;cursor:pointer}
+.btn:active{transform:scale(.98)}
+.btn-g{background:linear-gradient(135deg,var(--gm),var(--gl));color:white;box-shadow:0 4px 14px rgba(64,145,108,.28)}
+.btn-o{background:white;color:var(--gd);border:2px solid var(--gm)}
+.btn-wa{background:linear-gradient(135deg,#25d366,#128c7e);color:white;box-shadow:0 4px 12px rgba(37,211,102,.32)}
+.btn-gh{background:none;border:none;color:var(--tl);font-size:14px;padding:10px;width:100%;text-align:center}
+.gap10{display:flex;flex-direction:column;gap:10px}
+.pb24{padding-bottom:24px}
+/* Search */
+.sw{display:flex;gap:8px;align-items:center;padding:0 16px 12px}
+.sinp{flex:1;padding:11px 16px 11px 40px;border:1.5px solid var(--br);border-radius:50px;font-size:14px;background:white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237a9e7e' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") 12px center no-repeat;outline:none;color:var(--tx);transition:border .2s}
+.sinp:focus{border-color:var(--gl)}
+.sclr{flex-shrink:0;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--br);background:white;font-size:17px;color:var(--tl);display:none;align-items:center;justify-content:center;cursor:pointer}
+/* Categories */
+.cats{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cpill{flex-shrink:0;padding:7px 15px;border-radius:20px;font-size:13px;font-weight:600;border:1.5px solid var(--br);background:white;color:var(--tm);white-space:nowrap;cursor:pointer;transition:all .15s}
+.cpill.on{background:var(--gd);color:white;border-color:var(--gd)}
+/* Product grid */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
+.pcard{background:white;border-radius:var(--rs);padding:13px 11px;box-shadow:0 1px 8px rgba(0,0,0,.05);border:2px solid transparent;transition:border-color .2s,background .2s;display:flex;flex-direction:column;gap:9px}
+.pcard.on{border-color:var(--gl);background:var(--gs)}
+.pname{font-size:13px;font-weight:600;color:var(--tx);line-height:1.3;min-height:34px}
+/* Stepper */
+.stp{display:flex;align-items:center;justify-content:space-between;background:var(--gp);border-radius:9px;padding:2px;height:34px}
+.sbtn{width:30px;height:30px;border:none;border-radius:7px;background:transparent;color:var(--gd);font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.sbtn:active{background:rgba(0,0,0,.08)}
+.sval{font-size:15px;font-weight:800;color:var(--gd);min-width:26px;text-align:center}
+.sadd{width:100%;height:33px;border:1.5px dashed var(--br);border-radius:9px;background:transparent;color:var(--tl);font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.sadd:active{background:var(--gp)}
+/* Gram */
+.gw{display:flex;align-items:center;border:1.5px solid var(--br);border-radius:9px;background:white;overflow:hidden;height:33px;transition:border .2s}
+.gw:focus-within{border-color:var(--gl)}
+.gi{flex:1;border:none;outline:none;padding:0 4px 0 10px;font-size:15px;font-weight:700;color:var(--gd);background:transparent;width:0;font-family:inherit}
+.gi::placeholder{font-weight:400;color:var(--tl);font-size:12px}
+.glbl{padding:0 8px 0 2px;font-size:10px;font-weight:800;color:var(--tl);letter-spacing:.5px}
+.gx{width:24px;height:24px;border:none;background:transparent;color:var(--tl);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:5px;margin-right:2px;flex-shrink:0}
+/* Bottom bar */
+.bottom-bar{background:white;border-top:1px solid var(--br);padding:12px 16px;position:sticky;bottom:0;z-index:50}
+/* Summary rows */
+.srow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--gp);font-size:14px;gap:8px}
+.srow:last-child{border-bottom:none}
+.sqty{background:var(--gp);color:var(--gd);border-radius:20px;padding:2px 9px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0}
+/* GPS */
+.locbox{background:var(--gs);border:1.5px solid var(--br);border-radius:var(--rs);padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border .2s}
+.locbox.ok{border-color:var(--gl);background:#e8f5e8}
+.locdot{width:10px;height:10px;border-radius:50%;background:var(--tl);flex-shrink:0;animation:pulse 2s infinite}
+.locdot.ok{background:var(--gl)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+/* Info banner */
+.ibanner{background:#e8f5ff;border-left:3px solid #2196f3;border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#1565c0;line-height:1.5}
+/* Misc */
+.back-btn{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border:none;color:white;padding:7px 14px;border-radius:50px;font-size:13px;font-weight:600;margin-bottom:10px;cursor:pointer}
+.fchip{background:rgba(255,255,255,.18);border-radius:20px;padding:5px 12px;font-size:12px;display:inline-block;margin-top:8px}
+.loading{display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px;color:var(--gm);font-weight:600}
+.spinner{width:32px;height:32px;border:3px solid var(--gp);border-top-color:var(--gm);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading"><div class="spinner"></div><span>Cargando Smart Shopper…</span></div></div>
+<script>
+const WA='573124124034',WL=`https://wa.me/${WA}`,WEBHOOK='',N='Smart Shopper';
+const LOCS=['Usaquén','Chapinero','Santa Fe','San Cristóbal','Usme','Tunjuelito','Bosa','Kennedy','Fontibón','Engativá','Suba','Barrios Unidos','Teusaquillo','Los Mártires','Antonio Nariño','Puente Aranda','La Candelaria','Rafael Uribe Uribe','Ciudad Bolívar','Sumapaz','Otro municipio'];
+const HORS=['Mañana (8am–12pm)','Tarde (12pm–5pm)','Noche (5pm–8pm)','Lo antes posible','Acordar con domiciliario'];
+const CAT={
+  '🥦 Verduras':[
+    {n:'Acelga',u:'g'},{n:'Auyama',u:'g'},{n:'Alcachofa',u:'u'},{n:'Ají',u:'u'},
+    {n:'Ajo Importado',u:'u'},{n:'Ajo Nacional',u:'u'},{n:'Apio',u:'u'},
+    {n:'Aromáticas',u:'u'},{n:'Arracacha',u:'g'},{n:'Arveja Cáscara',u:'g'},
+    {n:'Arveja Desgranada',u:'g'},{n:'Brócoli',u:'u'},{n:'Berenjena',u:'u'},
+    {n:'Cabezona Blanca',u:'u'},{n:'Cabezona Roja',u:'u'},{n:'Calabaza',u:'g'},
+    {n:'Camote',u:'g'},{n:'Cebolla Larga',u:'u'},{n:'Cebolla Puerro',u:'u'},
+    {n:'Cebollin',u:'u'},{n:'Champiñón',u:'g'},{n:'Cilantro',u:'u'},
+    {n:'Coliflor',u:'u'},{n:'Espárragos',u:'g'},{n:'Espinaca',u:'g'},
+    {n:'Espinaca Baby',u:'g'},{n:'Frijol',u:'g'},{n:'Guatila',u:'u'},
+    {n:'Habichuela',u:'g'},{n:'Jengibre',u:'g'},{n:'Lechuga Cogollo',u:'u'},
+    {n:'Lechuga Batavia',u:'u'},{n:'Lechuga Morada',u:'u'},{n:'Lechuga Romana',u:'u'},
+    {n:'Lechuga Rúgula',u:'g'},{n:'Mazorca',u:'u'},{n:'Mazorca Desgranada',u:'g'},
+    {n:'Papa Criolla',u:'g'},{n:'Papa Sabanera',u:'g'},{n:'Papa Pastusa',u:'g'},
+    {n:'Pepino Cohombro',u:'u'},{n:'Pepino Común',u:'u'},{n:'Perejil',u:'u'},
+    {n:'Pimentón',u:'u'},{n:'Rábano',u:'u'},{n:'Remolacha',u:'g'},
+    {n:'Repollo Blanco',u:'u'},{n:'Repollo Morado',u:'u'},{n:'Tomate Cherry',u:'g'},
+    {n:'Tomate Chonto',u:'g'},{n:'Tomate Milano',u:'g'},{n:'Yuca',u:'g'},
+    {n:'Zanahoria',u:'g'},{n:'Zanahoria Baby',u:'g'},{n:'Zuchini',u:'u'}
+  ],
+  '🍎 Frutas':[
+    {n:'Aguacate Lorena',u:'u'},{n:'Aguacate Hass',u:'u'},{n:'Agraz',u:'g'},
+    {n:'Arándanos',u:'g'},{n:'Banano Bocadillo',u:'u'},{n:'Banano Criollo',u:'u'},
+    {n:'Ciruela',u:'g'},{n:'Coco',u:'u'},{n:'Curuba',u:'u'},{n:'Durazno',u:'u'},
+    {n:'Feijoa',u:'u'},{n:'Fresa',u:'g'},{n:'Granadilla',u:'u'},{n:'Guanábana',u:'g'},
+    {n:'Guayaba',u:'g'},{n:'Kiwi',u:'u'},{n:'Limón',u:'u'},{n:'Lulo',u:'u'},
+    {n:'Mandarina',u:'u'},{n:'Mango Azúcar',u:'u'},{n:'Mango Tommy',u:'u'},
+    {n:'Manzana Nacional',u:'u'},{n:'Manzana Roja',u:'u'},{n:'Manzana Verde',u:'u'},
+    {n:'Maracuyá',u:'u'},{n:'Melón',u:'u'},{n:'Mora',u:'g'},{n:'Naranja',u:'u'},
+    {n:'Papaya',u:'g'},{n:'Patilla',u:'u'},{n:'Pera',u:'u'},{n:'Piña Golden',u:'u'},
+    {n:'Piña Lebrija',u:'u'},{n:'Pithaya',u:'u'},{n:'Tomate de Árbol',u:'u'},
+    {n:'Uchuva',u:'g'},{n:'Uva Nacional',u:'g'},{n:'Uva Importada',u:'g'}
+  ],
+  '🥤 Pulpas':[
+    {n:'Pulpa Piña',u:'u'},{n:'Pulpa Guayaba',u:'u'},{n:'Pulpa Guanábana',u:'u'},
+    {n:'Pulpa Mango',u:'u'},{n:'Pulpa Fresa',u:'u'},{n:'Pulpa Maracuyá',u:'u'},
+    {n:'Pulpa Mora',u:'u'},{n:'Pulpa Lulo',u:'u'},{n:'Salpicón',u:'u'}
+  ],
+  '🥩 Carnes':[],
+  '🥛 Lácteos':[]
+};
+const CATS=Object.keys(CAT);
+
+let S={
+  screen:'welcome',phone:'',client:null,customers:{},
+  cart:{},cat:CATS[0],selPlan:'mes3',
+  del:{nombre:'',localidad:'',barrio:'',dir:'',apto:'',ref:'',horario:'',nota:'',coords:null,mapsLink:''},
+  sending:false,code:''
+};
+
+// STORAGE
+async function load(){try{if(window.storage){const r=await window.storage.get('ss4');if(r)return JSON.parse(r.value);}}catch(e){}try{const r=sessionStorage.getItem('ss4');if(r)return JSON.parse(r);}catch(e){}return{};}
+async function save(d){try{if(window.storage)await window.storage.set('ss4',JSON.stringify(d));}catch(e){}try{sessionStorage.setItem('ss4',JSON.stringify(d));}catch(e){}}
+
+const $=id=>document.getElementById(id);
+function cc(){return Object.keys(S.cart).length;}
+function ci(){return Object.entries(S.cart);}
+function fd(d){return new Date(d).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'});}
+function da(d){return Math.floor((Date.now()-new Date(d))/86400000);}
+function gf(orders){if(!orders||orders.length<2)return null;const s=[...orders].sort((a,b)=>new Date(a.date)-new Date(b.date));let t=0;for(let i=1;i<s.length;i++)t+=(new Date(s[i].date)-new Date(s[i-1].date))/86400000;const avg=Math.round(t/(s.length-1));return avg<=7?`Pide cada ${avg} días`:avg<=15?`Quincenal (~${avg} días)`:`Mensual (~${avg} días)`;}
+const PAGO_WA='573502241852';
+const PLANES=[
+  {id:'unica', label:'Solo esta vez',  precio:20000,  meses:0,  envios:1,  tag:''},
+  {id:'mes1',  label:'1 mes',          precio:60000,  meses:1,  envios:4,  tag:''},
+  {id:'mes2',  label:'2 meses',        precio:100000, meses:2,  envios:8,  tag:''},
+  {id:'mes3',  label:'3 meses',        precio:135000, meses:3,  envios:13, tag:'⭐ Popular'},
+  {id:'mes6',  label:'6 meses',        precio:240000, meses:6,  envios:27, tag:''},
+  {id:'ano1',  label:'1 año',          precio:360000, meses:12, envios:54, tag:'🏆 Mejor valor'}
+];
+function fmt$n(n){return '$'+n.toLocaleString('es-CO');}
+function hasDeliveries(){return (S.client?.deliveries||0)>0;}
+
+// ── PRODUCT CARDS ──────────────────────────────
+function cards(prods){
+  if(!prods.length)return`<div style="grid-column:1/-1;text-align:center;padding:40px 20px"><div style="font-size:36px;margin-bottom:8px">🔜</div><div style="font-weight:700;color:var(--gd)">Próximamente</div></div>`;
+  return prods.map(p=>{
+    const q=S.cart[p.n]?.qty||0,isG=p.u==='g';
+    const ctrl=isG
+      ?`<div class="gw"><input class="gi" type="number" inputmode="decimal" min="0" placeholder="cantidad…" data-p="${p.n}" value="${q||''}"><span class="glbl">GRM</span>${q?`<button class="gx" data-p="${p.n}">×</button>`:''}</div>`
+      :(!q?`<button class="sadd" data-p="${p.n}">+</button>`
+        :`<div class="stp"><button class="sbtn sminus" data-p="${p.n}">‹</button><span class="sval">${q}</span><button class="sbtn splus" data-p="${p.n}">›</button></div>`);
+    return`<div class="pcard ${q?'on':''}"><div class="pname">${p.n}</div>${ctrl}</div>`;
+  }).join('');
+}
+
+// ── SEARCH: regresa al listado al seleccionar ──
+let _searchActive=false;
+function goBackToList(){
+  _searchActive=false;
+  S.cat=S.cat||CATS[0];
+  const si=$('sinp');if(si)si.value='';
+  const sc=$('sclr');if(sc)sc.style.display='none';
+  const cb=$('catbar');if(cb)cb.style.display='flex';
+  const sh=$('shint');if(sh)sh.style.display='none';
+  const sy=window.scrollY;
+  const g=document.querySelector('.pgrid');
+  if(g){g.innerHTML=cards(CAT[S.cat]);bindP();}
+  refreshBottomBar();
+  requestAnimationFrame(()=>window.scrollTo(0,sy));
+}
+function getFiltered(){
+  const q=document.querySelector('.sinp')?.value||'';
+  return q.trim()?CATS.flatMap(c=>CAT[c].filter(p=>p.n.toLowerCase().includes(q.toLowerCase())).map(p=>({...p,c}))):CAT[S.cat];
+}
+function refreshBottomBar(){
+  const btn=$('bdone');if(!btn)return;
+  const n=cc();
+  btn.disabled=!n;
+  btn.style.opacity=n?'1':'0.5';
+  btn.textContent=n?`✅ Lista completada — ${n} producto${n!==1?'s':''}`:'Agrega productos para continuar';
+}
+function refreshGrid(){
+  const sy=window.scrollY,g=document.querySelector('.pgrid');
+  if(g){g.innerHTML=cards(getFiltered());bindP();}
+  refreshBottomBar();
+  requestAnimationFrame(()=>window.scrollTo(0,sy));
+}
+
+// ── BIND PRODUCT EVENTS ────────────────────────
+function bindP(){
+  document.querySelectorAll('.sadd').forEach(b=>{
+    b.onclick=()=>{
+      S.cart[b.dataset.p]={qty:1,unit:'u'};
+      if(_searchActive)goBackToList(); else refreshGrid();
+    };
+  });
+  document.querySelectorAll('.sminus').forEach(b=>{
+    b.onclick=()=>{const c=S.cart[b.dataset.p]?.qty||0;if(c<=1)delete S.cart[b.dataset.p];else S.cart[b.dataset.p].qty=c-1;refreshGrid();};
+  });
+  document.querySelectorAll('.splus').forEach(b=>{
+    b.onclick=()=>{if(S.cart[b.dataset.p])S.cart[b.dataset.p].qty++;else S.cart[b.dataset.p]={qty:1,unit:'u'};refreshGrid();};
+  });
+  document.querySelectorAll('.gi').forEach(inp=>{
+    inp.oninput=e=>{
+      const v=e.target.value.trim();
+      if(!v||Number(v)<=0)delete S.cart[inp.dataset.p];else S.cart[inp.dataset.p]={qty:v,unit:'grm'};
+      inp.closest('.pcard')?.classList.toggle('on',!!v);
+      const wrap=inp.closest('.gw');if(wrap){let x=wrap.querySelector('.gx');
+        if(v&&!x){x=document.createElement('button');x.className='gx';x.textContent='×';x.dataset.p=inp.dataset.p;x.onclick=()=>{delete S.cart[x.dataset.p];if(_searchActive)goBackToList();else refreshGrid();};wrap.appendChild(x);}
+        else if(!v&&x)x.remove();}
+      refreshBottomBar();
+    };
+    // Al salir del campo de gramos en búsqueda → regresa al listado si tiene valor
+    inp.onblur=()=>{if(S.cart[inp.dataset.p]&&_searchActive)setTimeout(goBackToList,150);};
+  });
+  document.querySelectorAll('.gx').forEach(b=>{
+    b.onclick=()=>{delete S.cart[b.dataset.p];if(_searchActive)goBackToList();else refreshGrid();};
+  });
+}
+
+// GPS
+function reqGPS(){
+  const box=$('locbox');if(!box)return;
+  box.innerHTML=`<div class="locdot"></div><span style="font-size:13px;color:var(--tm)">Obteniendo ubicación…</span>`;
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const{latitude:lat,longitude:lng}=pos.coords;
+    const link=`https://www.google.com/maps?q=${lat},${lng}`;
+    S.del.coords={lat,lng};S.del.mapsLink=link;
+    box.className='locbox ok';
+    box.innerHTML=`<div class="locdot ok"></div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--gd)">✓ Ubicación capturada</div><div style="font-size:11px;color:var(--tl);margin-top:2px">${lat.toFixed(5)}, ${lng.toFixed(5)}</div></div><a href="${link}" target="_blank" style="font-size:12px;color:var(--gl);font-weight:700;text-decoration:none">Ver →</a>`;
+  },()=>{box.innerHTML=`<div class="locdot"></div><span style="font-size:13px;color:var(--tl)">No se pudo. Puedes continuar sin GPS.</span>`;},{timeout:10000,enableHighAccuracy:true});
+}
+
+// Plan selection
+function selPlan(id){
+  S.selPlan=id;
+  document.querySelectorAll('.plan-card').forEach(c=>c.classList.toggle('sel',c.dataset.plan===id));
+  const p=PLANES.find(x=>x.id===id);
+  const waTxt=encodeURIComponent(`Hola! Quiero el plan ${p.label} de Smart Shopper.\nCelular: ${S.phone}\nNombre: ${S.del.nombre}`);
+  const link=$('btn-wa-pago');if(link)link.href=`https://wa.me/${PAGO_WA}?text=${waTxt}`;
+  // QR con la info del plan
+  const qbox=$('qr-box');
+  if(qbox&&window.QRCode){qbox.innerHTML='';new QRCode(qbox,{text:`https://wa.me/${PAGO_WA}?text=${waTxt}`,width:130,height:130,colorDark:'#1b4332',colorLight:'#ffffff'});}
+}
+
+// Load QR lib and generate QR on subscription screen
+function initQR(){
+  if(S.screen!=='subscription')return;
+  if(window.QRCode){selPlan(S.selPlan);return;}
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  s.onload=()=>selPlan(S.selPlan);
+  document.head.appendChild(s);
+}
+function hdr({title='', sub='', back=false, client=false, code=''}={}){
+  const clientBar = client && S.client ? `
+    <div style="background:rgba(255,255,255,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:12px;padding:10px 14px;margin-top:8px">
+      <div style="font-size:15px;font-weight:800;color:white">${S.del?.nombre||S.client.name}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.85);margin-top:1px">${S.client.phone}${S.del?.localidad?' · '+S.del.localidad:''}</div>
+    </div>` : '';
+  const codeBar = code ? `<div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:6px">Código: <strong>#${code}</strong></div>` : '';
+  return`
+  <div style="position:relative;overflow:hidden">
+    <img src="header.png" alt="Smart Shopper" style="width:100%;display:block;object-fit:cover;object-position:top;max-height:210px">
+    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.18) 0%,rgba(10,40,10,.72) 100%)"></div>
+    <div style="position:absolute;inset:0;padding:44px 18px 16px;display:flex;flex-direction:column;justify-content:flex-end">
+      ${back?`<button class="back-btn" id="bback" style="position:absolute;top:44px;left:18px">← Volver</button>`:''}
+      ${sub?`<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px">${sub}</div>`:''}
+      ${title?`<div style="font-size:22px;font-weight:800;color:white;line-height:1.1">${title}</div>`:''}
+      ${clientBar}
+      ${codeBar}
+    </div>
+  </div>`;}
+
+// ── RENDER ─────────────────────────────────────
+function render(){
+  const map={welcome:rWelcome,delivery:rDelivery,subscription:rSub,order:rOrder,cart:rCart,summary:rSummary,success:rSuccess};
+  document.getElementById('app').innerHTML=(map[S.screen]||rWelcome)();
+  bindE();
+}
+
+// SUBSCRIPTION
+function rSub(){
+  const planCards=PLANES.map(p=>`
+    <div class="plan-card ${S.selPlan===p.id?'sel':''}" data-plan="${p.id}" onclick="selPlan('${p.id}')">
+      ${p.tag?`<div class="plan-tag">${p.tag}</div>`:''}
+      <div class="plan-label">${p.label}</div>
+      <div class="plan-price">${fmt$n(p.precio)}</div>
+      <div class="plan-envios">${p.envios} envío${p.envios>1?'s':''}</div>
+      ${p.meses>0?`<div class="plan-xenvio">${fmt$n(Math.round(p.precio/p.envios))}/envío</div>`:''}
+    </div>`).join('');
+
+  const waTxt=encodeURIComponent(`Hola! Quiero inscribirme al plan ${PLANES.find(p=>p.id===S.selPlan)?.label||''} de Smart Shopper.\nMi celular: ${S.phone}\nNombre: ${S.del.nombre}`);
+
+  return`
+  ${hdr({title:'Suscripción de domicilios', sub:'Tu mercado llega a tu puerta'})}
+  <style>
+    .plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px}
+    .plan-card{background:white;border:2px solid var(--br);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+    .plan-card.sel{border-color:var(--gl);background:var(--gs);transform:scale(1.02)}
+    .plan-tag{position:absolute;top:0;right:0;background:var(--ac);color:white;font-size:10px;font-weight:800;padding:3px 8px;border-radius:0 12px 0 8px}
+    .plan-label{font-size:13px;font-weight:700;color:var(--tm);margin-bottom:4px}
+    .plan-price{font-size:20px;font-weight:800;color:var(--gd)}
+    .plan-envios{font-size:12px;color:var(--tl);margin-top:2px}
+    .plan-xenvio{font-size:11px;color:var(--gl);font-weight:700;margin-top:3px}
+    .value-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--gp)}
+    .value-row:last-child{border-bottom:none}
+    .value-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center}
+    .qr-box{background:white;border-radius:14px;padding:20px;text-align:center;border:2px solid var(--br)}
+  </style>
+  <div style="padding:16px 0" class="pb24">
+
+    <div class="card" style="border-left:4px solid var(--gl)">
+      <div style="font-size:15px;font-weight:800;color:var(--gd);margin-bottom:10px">¿Por qué Smart Shopper?</div>
+      <div class="value-row"><div class="value-icon">🥦</div><div><strong>Frescura garantizada</strong><br><span style="font-size:13px;color:var(--tm)">Seleccionamos los mejores productos del mercado mayorista directo</span></div></div>
+      <div class="value-row"><div class="value-icon">💰</div><div><strong>Precios más bajos que el supermercado</strong><br><span style="font-size:13px;color:var(--tm)">Sin intermediarios, compra directa al productor</span></div></div>
+      <div class="value-row"><div class="value-icon">🎁</div><div><strong>¡Yapa incluida!</strong><br><span style="font-size:13px;color:var(--tm)">En cada pedido te llevamos productos de sorpresa sin costo extra</span></div></div>
+      <div class="value-row"><div class="value-icon">🚚</div><div><strong>Tú solo pides, nosotros hacemos todo</strong><br><span style="font-size:13px;color:var(--tm)">Escogemos, empacamos y llevamos hasta tu puerta</span></div></div>
+      <div style="background:#e8f5e8;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:13px;color:var(--gd)">
+        📦 <strong>Para pedidos mayores a $60,000 en productos</strong>
+      </div>
+    </div>
+
+    <div style="padding:0 16px 12px"><div style="font-size:14px;font-weight:700;color:var(--gd);margin-bottom:10px">Elige tu plan de domicilios</div></div>
+    <div class="plan-grid">${planCards}</div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="ctitle">📲 ¿Cómo activar tu plan?</div>
+      <div style="font-size:13px;color:var(--tm);line-height:1.8">
+        <div>1️⃣ Elige tu plan arriba</div>
+        <div>2️⃣ Realiza el pago por Nequi, Bancolombia o efectivo</div>
+        <div>3️⃣ <strong>Envía foto del pago</strong> al número de abajo</div>
+        <div>4️⃣ Activamos tu suscripción y ¡listo! ya puedes pedir</div>
+      </div>
+      <div style="margin-top:14px;background:var(--gs);border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:13px;color:var(--tl);margin-bottom:6px">Envía comprobante a:</div>
+        <div style="font-size:22px;font-weight:800;color:var(--gd);letter-spacing:1px">📱 350 224 1852</div>
+        <div style="font-size:12px;color:var(--tl);margin-top:4px">Nequi · Bancolombia · Efectivo</div>
+      </div>
+      <div id="qr-box" style="margin-top:12px;text-align:center"></div>
+    </div>
+
+    <div style="padding:0 16px" class="gap10">
+      <a id="btn-wa-pago" href="https://wa.me/${PAGO_WA}?text=${waTxt}" class="btn btn-wa" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">
+        💬 Enviar comprobante por WhatsApp
+      </a>
+      <div style="background:#fff8e1;border-radius:12px;padding:12px 14px;font-size:13px;color:#7c6000;border:1.5px solid #ffe082">
+        ⏳ Una vez confirmemos tu pago, activamos los domicilios en tu cuenta
+      </div>
+      <button class="btn btn-o" id="bback">← Volver a mis datos</button>
+    </div>
+  </div>`;}
+
+
+// WELCOME
+function rWelcome(){return`
+  ${hdr({sub:'Mercado inteligente, fresco y saludable'})}
+  <div style="padding:16px 0" class="pb24">
+    <div class="card">
+      <div class="ctitle">📱 ¿Cuál es tu celular?</div>
+      <div class="field"><input id="iphone" class="inp" type="tel" placeholder="Ej: 3001234567" value="${S.phone}" inputmode="numeric" maxlength="12"></div>
+      <button class="btn btn-g" id="bphone">Continuar →</button>
+    </div>
+    <a href="${WL}" class="btn btn-wa" style="margin:0 16px;display:block;text-align:center;text-decoration:none" target="_blank">💬 Hablar con nosotros por WhatsApp</a>
+    <p style="text-align:center;font-size:12px;color:var(--tl);margin-top:12px">Si ya eres cliente recordamos tus datos</p>
+  </div>`;}
+
+// DELIVERY FORM (ahora al inicio)
+function rDelivery(){
+  const d=S.del;
+  return`
+  ${hdr({title:'Datos de entrega', sub:'Los guardamos para próximos pedidos', back:true})}
+  <div style="padding:16px 0" class="pb24">
+    <div class="card">
+      <div class="ctitle">👤 Quién recibe</div>
+      <div class="field"><label>Nombre completo *</label><input id="d-nom" class="inp" type="text" placeholder="Nombre de quien recibe" value="${d.nombre||S.client?.name||''}"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">📍 Dirección de entrega</div>
+      <div class="field"><label>Localidad *</label>
+        <select id="d-loc" class="inp"><option value="">Selecciona…</option>${LOCS.map(l=>`<option ${d.localidad===l?'selected':''}>${l}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Barrio *</label><input id="d-bar" class="inp" type="text" placeholder="Nombre del barrio" value="${d.barrio}"></div>
+      <div class="row2">
+        <div class="field"><label>Dirección *</label><input id="d-dir" class="inp" type="text" placeholder="Calle 80 # 20-15" value="${d.dir}"></div>
+        <div class="field"><label>Apto / Casa / Torre</label><input id="d-apt" class="inp" type="text" placeholder="Apto 302" value="${d.apto}"></div>
+      </div>
+      <div class="field"><label>Punto de referencia</label><input id="d-ref" class="inp" type="text" placeholder="Casa azul, cerca al parque…" value="${d.ref}"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">📡 Compartir ubicación GPS</div>
+      <p style="font-size:13px;color:var(--tl);margin-bottom:10px">Ayuda al domiciliario a encontrarte fácil</p>
+      <div class="locbox" id="locbox" onclick="reqGPS()">${S.del.mapsLink
+        ?`<div class="locdot ok"></div><div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--gd)">✓ Ubicación guardada</div></div><a href="${S.del.mapsLink}" target="_blank" style="font-size:12px;color:var(--gl);font-weight:700;text-decoration:none">Ver →</a>`
+        :`<div class="locdot"></div><span style="font-size:13px;color:var(--tm)">Tocar para compartir mi ubicación</span>`}</div>
+    </div>
+    <div class="card">
+      <div class="ctitle">🕐 Horario preferido</div>
+      <div class="field"><select id="d-hor" class="inp"><option value="">¿Cuándo prefieres recibir?</option>${HORS.map(h=>`<option ${d.horario===h?'selected':''}>${h}</option>`).join('')}</select></div>
+      <div class="field"><label>Nota adicional</label><textarea id="d-nota" class="inp" placeholder="Portería, timbre, instrucciones…">${d.nota}</textarea></div>
+    </div>
+    <div style="padding:0 16px" class="gap10">
+      <button class="btn btn-g" id="btoorder">Ir al mercado →</button>
+      <a href="${WL}" class="btn btn-wa" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">💬 Hablar por WhatsApp</a>
+    </div>
+  </div>`;}
+
+// ORDER (catálogo)
+function rOrder(){
+  const catPills=CATS.map(c=>`<button class="cpill ${c===S.cat?'on':''}" data-c="${c}">${c}</button>`).join('');
+  const n=cc();
+  return`
+  ${hdr({sub:'Escoge tus productos', client:true})}
+  <div style="padding:12px 0 0">
+    <div class="sw">
+      <input class="sinp" id="sinp" type="text" placeholder="Buscar producto…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+      <button class="sclr" id="sclr">×</button>
+    </div>
+    <div id="catbar" class="cats">${catPills}</div>
+    <div id="shint" style="padding:0 16px 10px;font-size:13px;color:var(--tl);display:none"></div>
+    <div class="pgrid">${cards(CAT[S.cat])}</div>
+    <div style="margin:16px 16px 0;background:linear-gradient(135deg,#3e1a00,#7c3500);border-radius:14px;padding:16px;color:white;display:flex;align-items:center;gap:12px">
+      <div style="font-size:36px;flex-shrink:0">🥩</div>
+      <div>
+        <div style="font-weight:800;font-size:14px">Carnes y Lácteos</div>
+        <div style="font-size:12px;opacity:.85;margin-top:2px">Muy pronto disponible — Pollo, res, cerdo, pescado, lácteos y más con la misma frescura</div>
+        <a href="${WL}" target="_blank" style="display:inline-block;margin-top:8px;background:rgba(255,255,255,.2);color:white;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;text-decoration:none">💬 Avisarme cuando esté listo</a>
+      </div>
+    </div>
+    <div style="height:16px"></div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn btn-g" id="bdone" ${!n?'disabled style="opacity:.5"':''}>
+      ${n?`✅ Lista completada — ${n} producto${n!==1?'s':''}`:'Agrega productos para continuar'}
+    </button>
+  </div>`;}
+
+// CART (revisar pedido)
+function rCart(){
+  const items=ci();
+  const rows=items.map(([name,{qty,unit}])=>{
+    const isG=unit==='grm';
+    const ctrl=isG
+      ?`<div class="gw" style="width:86px"><input class="cgi" type="number" inputmode="decimal" min="0" data-p="${name}" value="${qty}" style="font-size:14px"><span class="glbl">GRM</span></div>`
+      :`<div class="stp" style="width:86px"><button class="sbtn cmin" data-p="${name}">‹</button><span class="sval">${qty}</span><button class="sbtn cpls" data-p="${name}">›</button></div>`;
+    return`<div class="srow">
+      <span style="flex:1;font-size:14px;font-weight:500">${name}</span>
+      ${ctrl}
+      <button style="background:none;border:none;color:#e57373;font-size:18px;cursor:pointer;padding:0 4px;flex-shrink:0" data-p="${name}" class="cdel">✕</button>
+    </div>`;
+  }).join('');
+  return`
+  ${hdr({title:'Mi pedido', sub:`${items.length} producto${items.length!==1?'s':''} seleccionado${items.length!==1?'s':''}`, back:true})}
+  <div style="padding:16px 0">
+    <div class="card">
+      <div class="ctitle">🛍️ Revisa y ajusta tu pedido</div>
+      ${rows||`<div style="text-align:center;padding:20px;color:var(--tl)">No hay productos aún</div>`}
+    </div>
+    <div style="padding:0 16px" class="gap10">
+      <button class="btn btn-g" id="btosummary" ${!items.length?'disabled style="opacity:.5"':''}>Ver resumen →</button>
+      <button class="btn btn-o" id="bback">🛒 Seguir comprando</button>
+      <a href="${WL}" class="btn btn-wa" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">💬 Hablar por WhatsApp</a>
+    </div>
+    <div style="height:20px"></div>
+  </div>`;}
+
+// SUMMARY
+function rSummary(){
+  const items=ci(),d=S.del;
+  const rows=items.map(([n,{qty,unit}])=>`<div class="srow"><span style="flex:1">${n}</span><span class="sqty">${qty} ${unit}</span></div>`).join('');
+  const waTxt=encodeURIComponent([`🛒 *PEDIDO ${N.toUpperCase()}*`,`👤 ${d.nombre} · ${S.client.phone}`,
+    `📍 ${d.dir}${d.apto?' '+d.apto:''}, ${d.barrio}, ${d.localidad}`,
+    d.ref?`🏠 Ref: ${d.ref}`:null,d.mapsLink?`🗺️ ${d.mapsLink}`:null,
+    `🕐 ${d.horario||'Sin horario'}`,``,`*PRODUCTOS:*`,
+    ...items.map(([p,{qty,unit}])=>`• ${p}: ${qty} ${unit}`),
+    d.nota?`📝 ${d.nota}`:null
+  ].filter(Boolean).join('\n'));
+  return`
+  ${hdr({title:'Resumen del pedido', sub:'Revisa antes de confirmar', client:true})}
+  <div style="padding:16px 0" class="pb24">
+    <div class="card"><div class="ctitle">🛍️ Productos (${items.length})</div>${rows}</div>
+    <div class="card">
+      <div class="ctitle">📍 Entrega</div>
+      <div style="font-size:14px;line-height:1.7">
+        <div style="font-weight:600">${d.dir}${d.apto?' · '+d.apto:''}</div>
+        <div style="color:var(--tm)">${d.barrio}, ${d.localidad}</div>
+        ${d.ref?`<div style="color:var(--tl);font-size:13px">📌 ${d.ref}</div>`:''}
+        ${d.mapsLink?`<a href="${d.mapsLink}" target="_blank" style="color:var(--gl);font-size:13px;font-weight:700;text-decoration:none">🗺️ Ver en Google Maps</a>`:''}
+        <div style="color:var(--tm);font-size:13px">🕐 ${d.horario||'Horario no especificado'}</div>
+      </div>
+    </div>
+    <div class="ibanner">💡 <strong>¿Cómo funciona el pago?</strong><br>Recibimos tu pedido, lo preparamos y te enviamos el valor por WhatsApp. Pagas antes de la entrega.</div>
+    <div style="padding:0 16px" class="gap10">
+      <button class="btn btn-g" id="bconfirm" ${S.sending?'disabled':''}>
+        ${S.sending?'⏳ Enviando…':'✅ Confirmar pedido'}
+      </button>
+      <a href="https://wa.me/${WA}?text=${waTxt}" class="btn btn-wa" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">💬 Enviar por WhatsApp</a>
+      <button class="btn btn-o" id="bback">← Volver al pedido</button>
+    </div>
+  </div>`;}
+
+// SUCCESS
+function rSuccess(){
+  const d=S.del,items=ci();
+  const waTxt=encodeURIComponent([`✅ *CONFIRMADO #${S.code}*`,`👤 ${d.nombre} · ${S.client.phone}`,
+    `📍 ${d.dir}${d.apto?' '+d.apto:''}, ${d.barrio}, ${d.localidad}`,
+    d.mapsLink?`🗺️ ${d.mapsLink}`:null,`🕐 ${d.horario||''}`,``,`*PRODUCTOS:*`,
+    ...items.map(([p,{qty,unit}])=>`• ${p}: ${qty} ${unit}`),d.nota?`📝 ${d.nota}`:null
+  ].filter(Boolean).join('\n'));
+  return`
+  ${hdr({title:'¡Pedido enviado! ✅', sub:'Gracias por tu compra', client:true, code:S.code})}
+  <div style="padding:16px 0" class="pb24">
+    <div class="ibanner" style="margin:0 16px 14px">📦 Estamos preparando tu pedido. <strong>Te enviamos el valor por WhatsApp</strong> para que realices el pago. Luego tu domiciliario sale hacia <em>${d.barrio}</em>.${(S.client?.deliveries||0)>0?`<br>🚚 Te quedan <strong>${S.client.deliveries} domicilio${S.client.deliveries>1?'s':''}</strong> en tu suscripción.`:''}</div>
+    <div class="card">
+      <div class="ctitle">📋 Pedido #${S.code}</div>
+      ${items.map(([n,{qty,unit}])=>`<div class="srow"><span style="flex:1">${n}</span><span class="sqty">${qty} ${unit}</span></div>`).join('')}
+    </div>
+
+    <div class="card" style="margin:0 16px 14px">
+      <div class="ctitle">📸 Foto de entrega</div>
+      <p style="font-size:13px;color:var(--tl);margin-bottom:12px">Cuando recibas tu pedido toma una foto y envíanosla como comprobante de entrega</p>
+      <div id="foto-preview" style="display:none;margin-bottom:10px">
+        <img id="foto-img" style="width:100%;border-radius:10px;object-fit:cover;max-height:220px" alt="Foto de entrega">
+      </div>
+      <label style="display:block;width:100%;padding:12px;border:2px dashed var(--br);border-radius:10px;text-align:center;cursor:pointer;font-size:14px;font-weight:600;color:var(--tm);background:var(--gs)">
+        📷 Tomar o elegir foto
+        <input type="file" accept="image/*" capture="environment" id="foto-input" style="display:none" onchange="previewFoto(this)">
+      </label>
+      <button id="btn-send-foto" class="btn btn-wa" style="margin-top:10px;display:none" onclick="enviarFoto()">
+        📲 Enviar foto por WhatsApp
+      </button>
+    </div>
+
+    <div style="padding:0 16px" class="gap10">
+      <a href="https://wa.me/${WA}?text=${waTxt}" class="btn btn-wa" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">💬 Confirmar por WhatsApp</a>
+      <button class="btn btn-o" id="bseguir">🛒 Seguir comprando</button>
+      <button class="btn btn-gh" id="bnuevo">+ Nuevo pedido con otro cliente</button>
+    </div>
+  </div>`;}
+
+function previewFoto(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=$('foto-img'),prev=$('foto-preview'),btn=$('btn-send-foto');
+    if(img){img.src=e.target.result;}
+    if(prev)prev.style.display='block';
+    if(btn)btn.style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function enviarFoto(){
+  const input=$('foto-input');
+  const file=input?.files?.[0];
+  const code=S.code,nombre=S.del?.nombre||S.client?.name||'',celular=S.client?.phone||'';
+  const txt=encodeURIComponent(`📸 *Foto de entrega — Pedido #${code}*\n👤 ${nombre} · ${celular}\n📍 ${S.del?.barrio||''}, ${S.del?.localidad||''}`);
+  // Web Share API (funciona en celular)
+  if(file&&navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({title:`Entrega #${code}`,text:`Foto de entrega Smart Shopper`,files:[file]}).catch(()=>{});
+    return;
+  }
+  // Fallback: abrir WhatsApp con el texto (el usuario adjunta la foto manualmente)
+  window.open(`https://wa.me/${WA}?text=${txt}`,'_blank');
+}
+// RETURNING
+function showRet(){
+  const c=S.client,last=c.orders.slice(-1)[0],freq=gf(c.orders);
+  const age=da(last.date),aLbl=age===0?'Hoy':age===1?'Ayer':`Hace ${age} días`;
+  const prods=last.items.slice(0,4).map(i=>`<span style="background:var(--gp);color:var(--gd);padding:3px 8px;border-radius:20px;font-size:12px;font-weight:600">${i.qty} ${i.unit} ${i.product}</span>`).join('');
+  document.getElementById('app').innerHTML=`
+  ${hdr({title:`👋 ¡Hola, ${c.name}!`, sub:freq||'Bienvenido de nuevo'})}
+  <div style="padding:20px 0">
+    <div class="card">
+      <div class="ctitle">🕐 Último pedido — ${aLbl}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${prods}${last.items.length>4?`<span style="font-size:12px;color:var(--tl)">+${last.items.length-4} más</span>`:''}</div>
+      <div class="gap10">
+        <button class="btn btn-g" id="brep">🔁 Repetir este pedido</button>
+        <button class="btn btn-o" id="bnew">🛒 Ir al mercado</button>
+        <button class="btn btn-gh" id="brev">✏️ Actualizar datos de entrega</button>
+      </div>
+    </div>
+    ${c.orders.length>1?`<div class="card"><div class="ctitle">📊 Historial (${c.orders.length} pedidos)</div>${[...c.orders].reverse().slice(0,4).map(o=>`<div class="srow"><span style="font-size:13px;color:var(--tm)">${fd(o.date)}</span><span class="sqty">${o.items.length} prod.</span></div>`).join('')}</div>`:''}
+    <a href="${WL}" class="btn btn-wa" style="margin:0 16px;display:block;text-align:center;text-decoration:none" target="_blank">💬 Hablar por WhatsApp</a>
+  </div>`;
+  $('brep').onclick=()=>{S.cart={};last.items.forEach(i=>{S.cart[i.product]={qty:i.qty,unit:i.unit};});S.screen='order';render();};
+  $('bnew').onclick=()=>{S.cart={};S.screen='order';render();};
+  $('brev').onclick=()=>{S.screen='delivery';render();};
+}
+
+// ── BIND EVENTS ────────────────────────────────
+function bindE(){
+  // Welcome
+  const bp=$('bphone');
+  if(bp)bp.onclick=async()=>{
+    const p=$('iphone').value.replace(/\D/g,'');if(p.length<7)return;
+    S.phone=p;S.customers=await load();
+    if(S.customers[p]){
+      S.client=S.customers[p];S.cart={};
+      // Pre-fill delivery from saved data
+      if(S.client.lastDelivery)S.del={...S.del,...S.client.lastDelivery};
+      if(S.client.orders?.length){showRet();return;}
+      S.screen='delivery';
+    }else{S.screen='delivery';}
+    render();
+  };
+  const ip=$('iphone');if(ip)ip.onkeydown=e=>{if(e.key==='Enter')$('bphone')?.click();};
+
+  // Back (multi-screen)
+  const bb=$('bback');
+  if(bb)bb.onclick=()=>{
+    if(S.screen==='delivery')S.screen='welcome';
+    else if(S.screen==='subscription')S.screen='delivery';
+    else if(S.screen==='order')S.screen=hasDeliveries()?'order':'subscription';
+    else if(S.screen==='cart')S.screen='order';
+    else if(S.screen==='summary')S.screen='cart';
+    render();
+  };
+
+  // Delivery → check subscription → order
+  const bto=$('btoorder');
+  if(bto)bto.onclick=async()=>{
+    const d=S.del;
+    d.nombre=$('d-nom')?.value.trim()||'';
+    d.localidad=$('d-loc')?.value||'';
+    d.barrio=$('d-bar')?.value.trim()||'';
+    d.dir=$('d-dir')?.value.trim()||'';
+    d.apto=$('d-apt')?.value.trim()||'';
+    d.ref=$('d-ref')?.value.trim()||'';
+    d.horario=$('d-hor')?.value||'';
+    d.nota=$('d-nota')?.value.trim()||'';
+    if(!d.nombre||!d.localidad||!d.barrio||!d.dir){alert('Completa: Nombre, Localidad, Barrio y Dirección');return;}
+    if(!S.client){S.client={phone:S.phone,name:d.nombre,orders:[],deliveries:0};}
+    S.client.lastDelivery={...d};S.client.name=d.nombre;
+    S.customers[S.phone]=S.client;await save(S.customers);
+    // Si tiene domicilios disponibles → catálogo directo
+    if(hasDeliveries()){S.screen='order';}
+    else{S.screen='subscription';}
+    render();
+    if(S.screen==='subscription')setTimeout(initQR,300);
+  };
+
+  // Init QR if landing on subscription
+  if(S.screen==='subscription')setTimeout(initQR,300);
+
+  // Order screen
+  const si=$('sinp'),sc=$('sclr');
+  if(si){
+    si.oninput=e=>{
+      const q=e.target.value;_searchActive=!!q;
+      if(sc)sc.style.display=q?'flex':'none';
+      const cb=$('catbar');if(cb)cb.style.display=q?'none':'flex';
+      const sh=$('shint');if(sh){sh.style.display=q?'block':'none';sh.textContent=q?`Resultados para "${q}"`:''}
+      const g=document.querySelector('.pgrid');if(g){g.innerHTML=cards(getFiltered());bindP();}
+    };
+  }
+  if(sc)sc.onclick=()=>{_searchActive=false;goBackToList();};
+
+  document.querySelectorAll('.cpill').forEach(b=>{
+    b.onclick=()=>{
+      S.cat=b.dataset.c;_searchActive=false;
+      document.querySelectorAll('.cpill').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+      const si=$('sinp');if(si)si.value='';
+      const sc=$('sclr');if(sc)sc.style.display='none';
+      const cb=$('catbar');if(cb)cb.style.display='flex';
+      const sh=$('shint');if(sh)sh.style.display='none';
+      const g=document.querySelector('.pgrid');if(g){g.innerHTML=cards(CAT[S.cat]);bindP();}
+    };
+  });
+
+  // Lista completada → Cart
+  const bd=$('bdone');if(bd)bd.onclick=()=>{S.screen='cart';render();};
+
+  // Cart screen
+  document.querySelectorAll('.cmin').forEach(b=>{
+    b.onclick=()=>{const c=S.cart[b.dataset.p]?.qty||0;if(c<=1)delete S.cart[b.dataset.p];else S.cart[b.dataset.p].qty=c-1;render();};
+  });
+  document.querySelectorAll('.cpls').forEach(b=>{
+    b.onclick=()=>{if(S.cart[b.dataset.p])S.cart[b.dataset.p].qty++;else S.cart[b.dataset.p]={qty:1,unit:'u'};render();};
+  });
+  document.querySelectorAll('.cgi').forEach(inp=>{
+    inp.onchange=e=>{const v=e.target.value.trim();if(!v||Number(v)<=0)delete S.cart[inp.dataset.p];else S.cart[inp.dataset.p]={qty:v,unit:'grm'};};
+  });
+  document.querySelectorAll('.cdel').forEach(b=>{
+    b.onclick=()=>{delete S.cart[b.dataset.p];render();};
+  });
+
+  const bts=$('btosummary');if(bts)bts.onclick=()=>{S.screen='summary';render();};
+
+  // Confirm
+  const bc=$('bconfirm');
+  if(bc)bc.onclick=async()=>{
+    if(S.sending)return;S.sending=true;render();
+    S.code=gc();
+    const order={date:new Date().toISOString(),code:S.code,items:ci().map(([p,{qty,unit}])=>({product:p,qty,unit})),delivery:{...S.del}};
+    S.client.orders=[...(S.client.orders||[]),order];
+    S.client.lastDelivery={...S.del};
+    // Decrementar domicilios disponibles
+    if((S.client.deliveries||0)>0)S.client.deliveries--;
+    S.customers[S.client.phone]=S.client;await save(S.customers);
+    if(WEBHOOK){try{await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({timestamp:order.date,codigo:S.code,nombre:S.del.nombre,celular:S.client.phone,localidad:S.del.localidad,barrio:S.del.barrio,direccion:S.del.dir,apto:S.del.apto,referencia:S.del.ref,gps:S.del.mapsLink,horario:S.del.horario,nota:S.del.nota,productos:ci().map(([p,{qty,unit}])=>`${p}: ${qty} ${unit}`).join(' | '),total_items:cc(),domicilios_restantes:S.client.deliveries||0})});}catch(e){}}
+    S.sending=false;S.screen='success';render();
+  };
+
+  // Success — seguir comprando siempre funciona
+  const bsg=$('bseguir');
+  if(bsg)bsg.onclick=()=>{
+    S.cart={};
+    // Si aún tiene domicilios va al catálogo, si no a suscripción
+    S.screen=hasDeliveries()?'order':'subscription';
+    render();
+    if(S.screen==='subscription')setTimeout(initQR,300);
+  };
+  const bnu=$('bnuevo');
+  if(bnu)bnu.onclick=()=>{S.cart={};S.phone='';S.client=null;S.del={nombre:'',localidad:'',barrio:'',dir:'',apto:'',ref:'',horario:'',nota:'',coords:null,mapsLink:''};S.screen='welcome';render();};
+
+  bindP();
+}
+
+// ── CATÁLOGO DINÁMICO ─────────────────────────
+async function cargarCatalogoApp(){
+  if(!WEBHOOK)return;
+  try{
+    const r=await fetch(WEBHOOK+'?accion=catalogo');
+    const d=await r.json();
+    if(d.catalogo&&Object.keys(d.catalogo).length){
+      Object.keys(CAT).forEach(k=>delete CAT[k]);
+      Object.assign(CAT,d.catalogo);
+      CATS.length=0;
+      Object.keys(CAT).forEach(k=>CATS.push(k));
+      S.cat=CATS[0];
+      sessionStorage.setItem('ss_cat',JSON.stringify(d.catalogo));
+    }
+  }catch(e){
+    try{const c=sessionStorage.getItem('ss_cat');if(c){const cd=JSON.parse(c);Object.keys(CAT).forEach(k=>delete CAT[k]);Object.assign(CAT,cd);CATS.length=0;Object.keys(CAT).forEach(k=>CATS.push(k));}}catch(e2){}
+  }
+}
+
+window.addEventListener('DOMContentLoaded',async()=>{
+  await cargarCatalogoApp();
+  render();
+});
+</script>
+</body>
+</html>
