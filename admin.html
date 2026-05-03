@@ -27,7 +27,8 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,'SF Pro Display','Segoe UI',sans-serif;background:#f2f4f3;color:var(--tx);min-height:100vh}
 input,button,textarea,select{font-family:inherit}
-button{cursor:pointer}
+button{cursor:pointer;touch-action:manipulation}
+a,button,input,select,textarea{touch-action:manipulation}
 
 .topbar{background:linear-gradient(135deg,var(--gd),var(--gm));color:white;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
 .topbar-title{font-size:16px;font-weight:800}
