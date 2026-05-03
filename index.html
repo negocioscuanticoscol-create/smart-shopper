@@ -735,43 +735,46 @@ function bindE(){
   // Confirm
   const bc=$('bconfirm');
   if(bc)bc.onclick=async()=>{
-    if(S.sending)return;S.sending=true;render();
+    if(S.sending)return;
+    S.sending=true;
     S.code=gc();
-    const order={date:new Date().toISOString(),code:S.code,items:ci().map(([p,{qty,unit}])=>({product:p,qty,unit})),delivery:{...S.del}};
+    const order={date:new Date().toISOString(),code:S.code,
+      items:ci().map(([p,{qty,unit}])=>({product:p,qty,unit})),
+      delivery:{...S.del}};
+    // Guardar local
     S.client.orders=[...(S.client.orders||[]),order];
     S.client.lastDelivery={...S.del};
     if((S.client.deliveries||0)>0)S.client.deliveries--;
     S.customers[S.client.phone]=S.client;
     await save(S.customers);
-    // Enviar al Sheet via iframe GET — funciona con URLs largas sin CORS
+    // Mostrar éxito INMEDIATAMENTE — no esperar al Sheet
+    S.sending=false;
+    S.screen='success';
+    render();
+    // Enviar al Sheet en background (no bloquea)
     if(WEBHOOK){
-      const prods=ci().map(([p,{qty,unit}])=>`${p}:${qty}${unit}`).join('~~');
-      const params=new URLSearchParams({
-        accion:'nuevoPedido',
-        timestamp:order.date,
-        codigo:S.code,
-        nombre:S.del.nombre,
-        celular:S.client.phone,
-        localidad:S.del.localidad,
-        barrio:S.del.barrio,
-        direccion:S.del.dir,
-        apto:S.del.apto||'',
-        referencia:S.del.ref||'',
-        gps:S.del.mapsLink||'',
-        horario:S.del.horario||'',
-        nota:S.del.nota||'',
-        productos:prods,
-        total_items:String(cc()),
-        domicilios_restantes:String(S.client.deliveries||0)
-      });
-      const frame=document.createElement('iframe');
-      frame.style.cssText='display:none;width:0;height:0;border:none';
-      frame.src=WEBHOOK+'?'+params.toString();
-      document.body.appendChild(frame);
-      setTimeout(()=>{try{document.body.removeChild(frame);}catch(e){}},10000);
+      try{
+        const prods=ci().map(([p,{qty,unit}])=>encodeURIComponent(p)+':'+qty+unit).join('~~');
+        const url=WEBHOOK
+          +'?accion=nuevoPedido'
+          +'&codigo='+encodeURIComponent(S.code)
+          +'&nombre='+encodeURIComponent(S.del.nombre)
+          +'&celular='+encodeURIComponent(S.client.phone)
+          +'&localidad='+encodeURIComponent(S.del.localidad)
+          +'&barrio='+encodeURIComponent(S.del.barrio)
+          +'&direccion='+encodeURIComponent(S.del.dir)
+          +'&apto='+encodeURIComponent(S.del.apto||'')
+          +'&referencia='+encodeURIComponent(S.del.ref||'')
+          +'&horario='+encodeURIComponent(S.del.horario||'')
+          +'&nota='+encodeURIComponent(S.del.nota||'')
+          +'&productos='+encodeURIComponent(prods)
+          +'&total_items='+cc()
+          +'&domicilios_restantes='+S.client.deliveries
+          +'&timestamp='+encodeURIComponent(order.date);
+        const img=new Image();
+        img.src=url;
+      }catch(e){}
     }
-    // Avanzar inmediatamente sin esperar respuesta del Sheet
-    S.sending=false;S.screen='success';render();
   };
 
   // Success — seguir comprando siempre funciona
