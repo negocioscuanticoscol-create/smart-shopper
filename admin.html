@@ -147,52 +147,90 @@ button{cursor:pointer}
 <!-- SUSCRIPCIONES -->
 <div id="view-suscripciones" class="content">
 
-  <!-- ACTIVAR NUEVA SUSCRIPCIÓN -->
-  <div class="sec" style="border:2px solid #1565c0;background:#e3f2fd">
-    <div class="sec-title" style="color:#0d47a1;font-size:15px">💳 Activar suscripción — Pago recibido</div>
-    <p style="font-size:13px;color:#1565c0;margin-bottom:12px">Cuando el cliente envía el comprobante de pago, actívalo aquí</p>
-
-    <div class="field" style="margin-bottom:10px">
-      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:4px">📱 Celular del cliente *</label>
-      <input class="inp" id="sus-cel" type="tel" placeholder="Ej: 3001234567" inputmode="numeric">
+  <!-- COLA DE PENDIENTES -->
+  <div id="cola-pendientes" style="display:none;margin-bottom:12px">
+    <div style="background:#fff8e1;border:2px solid #f9a825;border-radius:12px;padding:14px">
+      <div style="font-weight:800;color:#f57f17;font-size:14px;margin-bottom:8px">⏳ Pendientes de activar</div>
+      <div id="cola-items"></div>
     </div>
-    <div class="field" style="margin-bottom:10px">
+  </div>
+
+  <!-- FORMULARIO ACTIVAR -->
+  <div class="sec" style="border:2px solid #1565c0;background:#e3f2fd">
+    <div class="sec-title" style="color:#0d47a1;font-size:15px">💳 Activar suscripción</div>
+    <p style="font-size:13px;color:#1565c0;margin-bottom:12px">Cuando el cliente envía el comprobante, verifica y activa aquí</p>
+
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:4px">📱 Celular del cliente *</label>
+      <input class="inp" id="sus-cel" type="tel" placeholder="Ej: 3001234567" inputmode="numeric"
+        oninput="buscarClienteEnWA(this.value)">
+    </div>
+    <div style="margin-bottom:10px">
       <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:4px">👤 Nombre del cliente *</label>
       <input class="inp" id="sus-nombre" type="text" placeholder="Nombre completo">
     </div>
 
+    <!-- Verificar en WhatsApp -->
+    <div id="wa-verify-box" style="display:none;background:white;border-radius:10px;padding:10px 12px;margin-bottom:12px;border:1.5px solid #25d366">
+      <div style="font-size:12px;font-weight:700;color:#128c7e;margin-bottom:6px">📲 Verificar pago en WhatsApp</div>
+      <a id="wa-verify-link" href="#" target="_blank" class="btn btn-wa" style="font-size:13px;padding:10px;text-align:center;text-decoration:none;display:block">
+        💬 Ver mensaje de este cliente
+      </a>
+    </div>
+
     <div style="margin-bottom:12px">
       <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:8px">📦 Plan contratado *</label>
-      <div id="plan-selector" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
-        ${[
-          {id:'unica',  label:'Solo 1 vez', precio:'$20.000',  envios:1},
-          {id:'mes1',   label:'1 mes',      precio:'$60.000',  envios:4},
-          {id:'mes2',   label:'2 meses',    precio:'$100.000', envios:8},
-          {id:'mes3',   label:'3 meses',    precio:'$135.000', envios:13},
-          {id:'mes6',   label:'6 meses',    precio:'$240.000', envios:27},
-          {id:'ano1',   label:'1 año',      precio:'$360.000', envios:54}
-        ].map(p=>`
-          <div onclick="selPlanAdmin('${p.id}',${p.envios},'${p.precio}')" id="pla-${p.id}"
-            style="border:2px solid #bbdefb;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;background:white;transition:all .15s">
-            <div style="font-weight:700;font-size:12px;color:#0d47a1">${p.label}</div>
-            <div style="font-size:14px;font-weight:800;color:#1b4332">${p.precio}</div>
-            <div style="font-size:10px;color:#7a9e7e">${p.envios} envío${p.envios>1?'s':''}</div>
-          </div>`).join('')}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
+        <div class="plan-opt" id="pla-unica" onclick="selPlanAdmin('unica',1,20000,'Solo 1 vez')">
+          <div class="po-label">Solo 1 vez</div>
+          <div class="po-price">$20.000</div>
+          <div class="po-envios">1 envío</div>
+        </div>
+        <div class="plan-opt" id="pla-mes1" onclick="selPlanAdmin('mes1',4,60000,'1 mes')">
+          <div class="po-label">1 mes</div>
+          <div class="po-price">$60.000</div>
+          <div class="po-envios">4 envíos</div>
+        </div>
+        <div class="plan-opt" id="pla-mes2" onclick="selPlanAdmin('mes2',8,100000,'2 meses')">
+          <div class="po-label">2 meses</div>
+          <div class="po-price">$100.000</div>
+          <div class="po-envios">8 envíos</div>
+        </div>
+        <div class="plan-opt" id="pla-mes3" onclick="selPlanAdmin('mes3',13,135000,'3 meses')" style="border-color:#f9a825">
+          <div class="po-label">3 meses ⭐</div>
+          <div class="po-price">$135.000</div>
+          <div class="po-envios">13 envíos</div>
+        </div>
+        <div class="plan-opt" id="pla-mes6" onclick="selPlanAdmin('mes6',27,240000,'6 meses')">
+          <div class="po-label">6 meses</div>
+          <div class="po-price">$240.000</div>
+          <div class="po-envios">27 envíos</div>
+        </div>
+        <div class="plan-opt" id="pla-ano1" onclick="selPlanAdmin('ano1',54,360000,'1 año')">
+          <div class="po-label">1 año 🏆</div>
+          <div class="po-price">$360.000</div>
+          <div class="po-envios">54 envíos</div>
+        </div>
       </div>
     </div>
 
-    <div style="background:white;border-radius:10px;padding:12px;margin-bottom:12px;border:1.5px solid #bbdefb">
-      <div style="font-size:12px;color:#1565c0;font-weight:700;margin-bottom:4px">Resumen a activar:</div>
-      <div id="sus-resumen" style="font-size:13px;color:#333">Selecciona un plan arriba</div>
+    <div style="background:white;border-radius:10px;padding:12px;margin-bottom:12px;border:1.5px solid #bbdefb;min-height:48px">
+      <div style="font-size:11px;color:#1565c0;font-weight:700;margin-bottom:3px">Resumen a activar:</div>
+      <div id="sus-resumen" style="font-size:14px;color:#333;font-weight:500">Selecciona un plan arriba</div>
     </div>
 
-    <button class="btn" onclick="activarSuscripcion()"
-      style="background:linear-gradient(135deg,#1565c0,#1976d2);color:white;font-size:15px;font-weight:800;padding:15px">
-      ✅ Activar suscripción
-    </button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-o" onclick="agregarACola()" style="flex:1;font-size:13px">
+        ➕ Guardar en cola
+      </button>
+      <button class="btn" onclick="activarSuscripcion()"
+        style="flex:2;background:linear-gradient(135deg,#1565c0,#1976d2);color:white;font-weight:800">
+        ✅ Activar ahora
+      </button>
+    </div>
   </div>
 
-  <!-- LISTADO DE SUSCRITOS -->
+  <!-- LISTADO SUSCRITOS -->
   <div class="sec" style="margin-top:12px">
     <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
       <span>📋 Clientes suscritos</span>
@@ -202,6 +240,14 @@ button{cursor:pointer}
   </div>
 
 </div>
+<style>
+.plan-opt{border:2px solid #bbdefb;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;background:white;transition:all .15s}
+.plan-opt.sel{border-color:#1565c0;background:#e3f2fd}
+.po-label{font-weight:700;font-size:12px;color:#0d47a1}
+.po-price{font-size:15px;font-weight:800;color:#1b4332;margin:2px 0}
+.po-envios{font-size:10px;color:#7a9e7e}
+</style>
+
 
 <!-- PEDIDOS -->
 <div id="view-pedidos" class="content" style="display:none">
@@ -369,85 +415,138 @@ function setTab(t){
 
 // ── SUSCRIPCIONES ─────────────────────────────
 const PLANES_ADMIN=[
-  {id:'unica',label:'Solo 1 vez',precio:20000,meses:0,envios:1},
-  {id:'mes1', label:'1 mes',     precio:60000, meses:1,envios:4},
-  {id:'mes2', label:'2 meses',   precio:100000,meses:2,envios:8},
-  {id:'mes3', label:'3 meses',   precio:135000,meses:3,envios:13},
-  {id:'mes6', label:'6 meses',   precio:240000,meses:6,envios:27},
+  {id:'unica',label:'Solo 1 vez',precio:20000, meses:0, envios:1},
+  {id:'mes1', label:'1 mes',     precio:60000, meses:1, envios:4},
+  {id:'mes2', label:'2 meses',   precio:100000,meses:2, envios:8},
+  {id:'mes3', label:'3 meses',   precio:135000,meses:3, envios:13},
+  {id:'mes6', label:'6 meses',   precio:240000,meses:6, envios:27},
   {id:'ano1', label:'1 año',     precio:360000,meses:12,envios:54}
 ];
 let planSelAdmin=null;
+let colaActivar=[];
 
-function selPlanAdmin(id,envios,precio){
-  planSelAdmin={id,envios,precio};
-  document.querySelectorAll('[id^="pla-"]').forEach(el=>{
-    el.style.borderColor=el.id==='pla-'+id?'#1565c0':'#bbdefb';
-    el.style.background=el.id==='pla-'+id?'#e3f2fd':'white';
-  });
-  const p=PLANES_ADMIN.find(x=>x.id===id);
+function selPlanAdmin(id,envios,precio,label){
+  planSelAdmin={id,envios,precio,label};
+  document.querySelectorAll('.plan-opt').forEach(el=>el.classList.remove('sel'));
+  const el=document.getElementById('pla-'+id);if(el)el.classList.add('sel');
   const res=document.getElementById('sus-resumen');
-  if(res&&p)res.innerHTML=`<strong>${p.label}</strong> — ${precio} — <strong>${envios} envío${envios>1?'s':''}</strong>`;
+  if(res)res.innerHTML=`<strong>${label}</strong> — $${precio.toLocaleString('es-CO')} — <strong>${envios} envío${envios>1?'s':''}</strong>`;
+}
+
+function buscarClienteEnWA(cel){
+  const clean=cel.replace(/\D/g,'');
+  const box=document.getElementById('wa-verify-box');
+  const link=document.getElementById('wa-verify-link');
+  if(clean.length>=7&&box&&link){
+    box.style.display='block';
+    link.href=`https://wa.me/57${clean}`;
+    link.textContent=`💬 Ver chat de ${clean} en WhatsApp`;
+  }else if(box){box.style.display='none';}
+}
+
+function limpiarFormSus(){
+  const cel=document.getElementById('sus-cel');if(cel)cel.value='';
+  const nom=document.getElementById('sus-nombre');if(nom)nom.value='';
+  const res=document.getElementById('sus-resumen');if(res)res.textContent='Selecciona un plan arriba';
+  const box=document.getElementById('wa-verify-box');if(box)box.style.display='none';
+  document.querySelectorAll('.plan-opt').forEach(el=>el.classList.remove('sel'));
+  planSelAdmin=null;
+}
+
+function validarFormSus(){
+  const cel=document.getElementById('sus-cel')?.value.trim().replace(/\D/g,'');
+  const nombre=document.getElementById('sus-nombre')?.value.trim();
+  if(!cel||cel.length<7){alert('Ingresa el celular del cliente');return null;}
+  if(!nombre){alert('Ingresa el nombre del cliente');return null;}
+  if(!planSelAdmin){alert('Selecciona un plan');return null;}
+  return{cel,nombre,plan:planSelAdmin};
+}
+
+function agregarACola(){
+  const v=validarFormSus();if(!v)return;
+  colaActivar.push({...v,ts:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})});
+  renderCola();limpiarFormSus();
+}
+
+function renderCola(){
+  const box=document.getElementById('cola-pendientes');
+  const items=document.getElementById('cola-items');
+  if(!box||!items)return;
+  if(!colaActivar.length){box.style.display='none';return;}
+  box.style.display='block';
+  items.innerHTML=colaActivar.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #ffe082">
+      <div style="flex:1;font-size:13px">
+        <strong>${c.nombre}</strong> · 📱${c.cel}<br>
+        <span style="color:#f57f17">${c.plan.label} — $${c.plan.precio.toLocaleString('es-CO')} — ${c.plan.envios} envíos</span>
+        <span style="color:#bbb;font-size:11px"> · ${c.ts}</span>
+      </div>
+      <a href="https://wa.me/57${c.cel}" target="_blank" style="background:#25d366;color:white;border-radius:6px;padding:5px 8px;font-size:14px;text-decoration:none">💬</a>
+      <button onclick="activarDeCola(${i})" style="background:#43a047;color:white;border:none;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12px;cursor:pointer">✅</button>
+      <button onclick="quitarDeCola(${i})" style="background:#e57373;color:white;border:none;border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer">✕</button>
+    </div>`).join('')+
+    (colaActivar.length>1?`<button onclick="activarTodaCola()" class="btn btn-g" style="margin-top:10px;font-size:13px">⚡ Activar todos (${colaActivar.length})</button>`:'');
+}
+
+function quitarDeCola(i){colaActivar.splice(i,1);renderCola();}
+
+async function activarDeCola(i){
+  const c=colaActivar[i];
+  const ok=await activarEnSheet(c.cel,c.nombre,c.plan);
+  if(ok){colaActivar.splice(i,1);renderCola();cargarListaSus();}
+}
+
+async function activarTodaCola(){
+  for(let i=colaActivar.length-1;i>=0;i--){
+    const c=colaActivar[i];
+    if(await activarEnSheet(c.cel,c.nombre,c.plan))colaActivar.splice(i,1);
+  }
+  renderCola();cargarListaSus();alert('✅ Todos activados');
 }
 
 async function activarSuscripcion(){
-  const cel=document.getElementById('sus-cel')?.value.trim().replace(/\D/g,'');
-  const nombre=document.getElementById('sus-nombre')?.value.trim();
-  if(!cel||cel.length<7){alert('Ingresa el celular del cliente');return;}
-  if(!nombre){alert('Ingresa el nombre del cliente');return;}
-  if(!planSelAdmin){alert('Selecciona un plan');return;}
-  const p=PLANES_ADMIN.find(x=>x.id===planSelAdmin.id);
-  if(!WEBHOOK){
-    alert(`✅ (Demo) Activados ${p.envios} domicilios para ${nombre} — ${cel}\nConfigura el webhook para sincronizar con Sheets.`);
-    return;
-  }
+  const v=validarFormSus();if(!v)return;
+  if(await activarEnSheet(v.cel,v.nombre,v.plan)){limpiarFormSus();cargarListaSus();}
+}
+
+async function activarEnSheet(cel,nombre,plan){
+  if(!WEBHOOK){alert(`✅ (Demo) ${plan.envios} domicilios para ${nombre} — ${cel}`);return true;}
   try{
     const r=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        accion:'suscripcion',
-        celular:cel,nombre,
-        plan:p.label,valor:p.precio,
-        envios:p.envios,meses:p.meses,
-        fechaPago:new Date().toISOString()
-      })});
+      body:JSON.stringify({accion:'suscripcion',celular:cel,nombre,
+        plan:plan.label,valor:plan.precio,envios:plan.envios,meses:plan.meses,
+        fechaPago:new Date().toISOString()})});
     const d=await r.json();
-    if(d.ok){
-      alert(`✅ ¡Activado!\n👤 ${nombre} — ${cel}\n📦 Plan: ${p.label}\n🚚 ${p.envios} domicilios disponibles`);
-      document.getElementById('sus-cel').value='';
-      document.getElementById('sus-nombre').value='';
-      planSelAdmin=null;
-      document.querySelectorAll('[id^="pla-"]').forEach(el=>{el.style.borderColor='#bbdefb';el.style.background='white';});
-      document.getElementById('sus-resumen').textContent='Selecciona un plan arriba';
-      cargarListaSus();
-    }else{alert('Error: '+(d.error||'desconocido'));}
-  }catch(err){alert('Error de conexión: '+err.message);}
+    if(d.ok){alert(`✅ Activado!\n👤 ${nombre} — ${cel}\n📦 ${plan.label} — ${plan.envios} envíos`);return true;}
+    else{alert('Error: '+(d.error||'?'));return false;}
+  }catch(err){alert('Error: '+err.message);return false;}
 }
 
 async function cargarListaSus(){
   const lista=document.getElementById('sus-lista');if(!lista)return;
-  if(!WEBHOOK){
-    lista.innerHTML=`<div style="text-align:center;padding:16px;color:var(--tl);font-size:13px">
-      Configura el webhook para ver los suscritos.<br>
-      <small>⚙️ Config → pega la URL del Apps Script</small></div>`;
-    return;
-  }
+  if(!WEBHOOK){lista.innerHTML='<div style="text-align:center;padding:14px;font-size:13px;color:var(--tl)">Configura el webhook en ⚙️ Config</div>';return;}
   lista.innerHTML='<div class="loading"><div class="spinner"></div></div>';
   try{
     const r=await fetch(WEBHOOK+'?accion=suscripciones');
     const d=await r.json();
     const subs=d.suscripciones||[];
     if(!subs.length){lista.innerHTML='<div class="empty">Sin suscripciones aún</div>';return;}
-    lista.innerHTML=subs.map(s=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gp)">
+    lista.innerHTML=subs.map(s=>{
+      const dom=Number(s.domRestantes)||0;
+      return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gp)">
         <div style="flex:1">
           <div style="font-weight:700;font-size:14px">${s.nombre}</div>
-          <div style="font-size:12px;color:var(--tm)">📱 ${s.celular} · ${s.plan||'—'}</div>
+          <div style="font-size:12px;color:var(--tm)">📱 ${s.celular} · <span style="color:#1565c0">${s.plan||'—'}</span></div>
+          <div style="font-size:11px;color:var(--tl)">Vence: ${s.vence||'N/A'}</div>
         </div>
-        <div style="text-align:center">
-          <div style="font-size:18px;font-weight:800;color:${Number(s.domRestantes)>0?'var(--gl)':'#e57373'}">${s.domRestantes||0}</div>
+        <div style="text-align:center;min-width:44px">
+          <div style="font-size:22px;font-weight:800;color:${dom>0?'var(--gl)':'#e57373'}">${dom}</div>
           <div style="font-size:10px;color:var(--tl)">envíos</div>
         </div>
-        <span style="background:${s.estado==='Activo'?'var(--gp)':'#fce4ec'};color:${s.estado==='Activo'?'var(--gd)':'#c62828'};padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700">${s.estado||'Activo'}</span>
-      </div>`).join('');
+        <a href="https://wa.me/57${s.celular}" target="_blank"
+          style="background:#25d366;color:white;border-radius:8px;padding:6px 10px;font-size:18px;text-decoration:none">💬</a>
+      </div>`;
+    }).join('');
   }catch(e){lista.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
 
