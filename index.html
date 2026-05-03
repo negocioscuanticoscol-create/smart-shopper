@@ -737,44 +737,52 @@ function bindE(){
   if(bc)bc.onclick=async()=>{
     if(S.sending)return;
     S.sending=true;
-    S.code=gc();
-    const order={date:new Date().toISOString(),code:S.code,
-      items:ci().map(([p,{qty,unit}])=>({product:p,qty,unit})),
-      delivery:{...S.del}};
-    // Guardar local
-    S.client.orders=[...(S.client.orders||[]),order];
-    S.client.lastDelivery={...S.del};
-    if((S.client.deliveries||0)>0)S.client.deliveries--;
-    S.customers[S.client.phone]=S.client;
-    await save(S.customers);
-    // Mostrar éxito INMEDIATAMENTE — no esperar al Sheet
+    // Mostrar "enviando" visualmente
+    bc.textContent='⏳ Procesando...';
+    bc.disabled=true;
+    try{
+      S.code=gc();
+      const items=ci().map(([p,{qty,unit}])=>({product:p,qty,unit}));
+      const order={date:new Date().toISOString(),code:S.code,items,delivery:{...S.del}};
+      if(S.client){
+        S.client.orders=[...(S.client.orders||[]),order];
+        S.client.lastDelivery={...S.del};
+        if((S.client.deliveries||0)>0)S.client.deliveries--;
+        S.customers[S.client.phone]=S.client;
+      }
+      try{await save(S.customers);}catch(e){}
+    }catch(e){}
+    // SIEMPRE avanzar a éxito
     S.sending=false;
     S.screen='success';
     render();
-    // Enviar al Sheet en background (no bloquea)
-    if(WEBHOOK){
+    // Enviar al Sheet en background — no bloquea jamás
+    setTimeout(()=>{
       try{
-        const prods=ci().map(([p,{qty,unit}])=>encodeURIComponent(p)+':'+qty+unit).join('~~');
+        if(!WEBHOOK||!S.code)return;
+        const savedItems=S.client?.orders?.slice(-1)[0]?.items||[];
+        const prods=savedItems.map(i=>encodeURIComponent(i.product)+':'+i.qty+i.unit).join('~~');
+        const d=S.del||{};
         const url=WEBHOOK
           +'?accion=nuevoPedido'
-          +'&codigo='+encodeURIComponent(S.code)
-          +'&nombre='+encodeURIComponent(S.del.nombre)
-          +'&celular='+encodeURIComponent(S.client.phone)
-          +'&localidad='+encodeURIComponent(S.del.localidad)
-          +'&barrio='+encodeURIComponent(S.del.barrio)
-          +'&direccion='+encodeURIComponent(S.del.dir)
-          +'&apto='+encodeURIComponent(S.del.apto||'')
-          +'&referencia='+encodeURIComponent(S.del.ref||'')
-          +'&horario='+encodeURIComponent(S.del.horario||'')
-          +'&nota='+encodeURIComponent(S.del.nota||'')
+          +'&codigo='+S.code
+          +'&nombre='+encodeURIComponent(d.nombre||'')
+          +'&celular='+encodeURIComponent(S.client?.phone||S.phone||'')
+          +'&localidad='+encodeURIComponent(d.localidad||'')
+          +'&barrio='+encodeURIComponent(d.barrio||'')
+          +'&direccion='+encodeURIComponent(d.dir||'')
+          +'&apto='+encodeURIComponent(d.apto||'')
+          +'&referencia='+encodeURIComponent(d.ref||'')
+          +'&horario='+encodeURIComponent(d.horario||'')
+          +'&nota='+encodeURIComponent(d.nota||S.note||'')
           +'&productos='+encodeURIComponent(prods)
-          +'&total_items='+cc()
-          +'&domicilios_restantes='+S.client.deliveries
-          +'&timestamp='+encodeURIComponent(order.date);
+          +'&total_items='+savedItems.length
+          +'&domicilios_restantes='+(S.client?.deliveries||0)
+          +'&timestamp='+encodeURIComponent(new Date().toISOString());
         const img=new Image();
         img.src=url;
       }catch(e){}
-    }
+    },500);
   };
 
   // Success — seguir comprando siempre funciona
