@@ -512,12 +512,14 @@ async function activarSuscripcion(){
 async function activarEnSheet(cel,nombre,plan){
   if(!WEBHOOK){alert(`✅ (Demo) ${plan.envios} domicilios para ${nombre} — ${cel}`);return true;}
   try{
-    fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({accion:'suscripcion',celular:cel,nombre,
-        plan:plan.label,valor:plan.precio,envios:plan.envios,meses:plan.meses,
-        fechaPago:new Date().toISOString()})});
-    // no-cors no devuelve respuesta legible — asumir éxito
-    alert(`✅ Enviado!\n👤 ${nombre} — ${cel}\n📦 ${plan.label} — ${plan.envios} envíos\n\nRevisa el Sheet para confirmar.`);
+    const payload=JSON.stringify({accion:'suscripcion',celular:cel,nombre,
+      plan:plan.label,valor:plan.precio,envios:plan.envios,meses:plan.meses,
+      fechaPago:new Date().toISOString()});
+    const blob=new Blob([payload],{type:'text/plain'});
+    navigator.sendBeacon(WEBHOOK,blob);
+    // Esperar 1.5 seg para que llegue al Sheet
+    await new Promise(r=>setTimeout(r,1500));
+    alert(`✅ Activado!\n👤 ${nombre} — ${cel}\n📦 ${plan.label} — ${plan.envios} envíos\n\nRevisa el Sheet para confirmar.`);
     return true;
   }catch(err){alert('Error: '+err.message);return false;}
 }
@@ -856,10 +858,9 @@ async function guardarCambios(){
   const idx=pedidos.findIndex(p=>p.codigo===pActual.codigo);
   if(idx>=0)pedidos[idx]={...pActual};
   if(WEBHOOK){
-    // no-cors: fire and forget, no leer respuesta
-    fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
-      body:JSON.stringify({accion:'actualizar',codigo:pActual.codigo,estado:pActual.estado,valor,yapa,celular:pActual.celular})})
-      .catch(()=>{});
+    const payload=JSON.stringify({accion:'actualizar',codigo:pActual.codigo,estado:pActual.estado,valor,yapa,celular:pActual.celular});
+    const blob=new Blob([payload],{type:'text/plain'});
+    navigator.sendBeacon(WEBHOOK,blob);
   }
   cerrarPanel();
   renderLista();
