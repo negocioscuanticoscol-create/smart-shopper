@@ -619,9 +619,24 @@ function bindE(){
   if(bp)bp.onclick=async()=>{
     const p=$('iphone').value.replace(/\D/g,'');if(p.length<7)return;
     S.phone=p;S.customers=await load();
+    // Consultar Sheet para domicilios actualizados
+    if(WEBHOOK){
+      try{
+        const r=await fetch(WEBHOOK+'?accion=clientes');
+        const d=await r.json();
+        const found=(d.clientes||[]).find(c=>String(c.celular)===String(p));
+        if(found&&S.customers[p]){
+          S.customers[p].deliveries=Number(found.domicilios)||0;
+          await save(S.customers);
+        } else if(found&&!S.customers[p]){
+          // Cliente existe en Sheet pero no localmente → crearlo
+          S.customers[p]={phone:p,name:found.nombre||'',address:'',orders:[],deliveries:Number(found.domicilios)||0};
+          await save(S.customers);
+        }
+      }catch(e){}
+    }
     if(S.customers[p]){
       S.client=S.customers[p];S.cart={};
-      // Pre-fill delivery from saved data
       if(S.client.lastDelivery)S.del={...S.del,...S.client.lastDelivery};
       if(S.client.orders?.length){showRet();return;}
       S.screen='delivery';
@@ -658,6 +673,19 @@ function bindE(){
     S.client.lastDelivery={...d};S.client.name=d.nombre;
     S.customers[S.phone]=S.client;await save(S.customers);
     // Si tiene domicilios disponibles → catálogo directo
+    // Primero consulta el Sheet para obtener domicilios actualizados
+    if(WEBHOOK){
+      try{
+        const r=await fetch(WEBHOOK+'?accion=clientes');
+        const d=await r.json();
+        const found=(d.clientes||[]).find(c=>String(c.celular)===String(S.phone));
+        if(found){
+          S.client.deliveries=Number(found.domicilios)||0;
+          S.customers[S.phone]=S.client;
+          await save(S.customers);
+        }
+      }catch(e){}
+    }
     if(hasDeliveries()){S.screen='order';}
     else{S.screen='subscription';}
     render();
