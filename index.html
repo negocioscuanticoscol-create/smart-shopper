@@ -743,7 +743,7 @@ function bindE(){
     if((S.client.deliveries||0)>0)S.client.deliveries--;
     S.customers[S.client.phone]=S.client;
     await save(S.customers);
-    // Enviar al Sheet en background — no esperamos respuesta (evita CORS)
+    // Enviar al Sheet con sendBeacon — no tiene restricciones CORS
     if(WEBHOOK){
       const payload=JSON.stringify({
         timestamp:order.date,codigo:S.code,
@@ -755,9 +755,16 @@ function bindE(){
         productos:ci().map(([p,{qty,unit}])=>`${p}: ${qty} ${unit}`).join(' | '),
         total_items:cc(),domicilios_restantes:S.client.deliveries||0
       });
-      // Usar no-cors para evitar el bloqueo CORS en POST
-      fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:payload})
-        .catch(()=>{});
+      try{
+        const blob=new Blob([payload],{type:'text/plain'});
+        const sent=navigator.sendBeacon(WEBHOOK,blob);
+        if(!sent){
+          // Fallback si sendBeacon falla
+          fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:payload}).catch(()=>{});
+        }
+      }catch(e){
+        fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:payload}).catch(()=>{});
+      }
     }
     // Avanzar inmediatamente sin esperar respuesta del Sheet
     S.sending=false;S.screen='success';render();
