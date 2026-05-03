@@ -88,7 +88,7 @@ select.inp{appearance:none;background:white url("data:image/svg+xml,%3Csvg xmlns
 <body>
 <div id="app"><div class="loading"><div class="spinner"></div><span>Cargando Smart Shopper…</span></div></div>
 <script>
-const WA='573124124034',WL=`https://wa.me/${WA}`,WEBHOOK='https://script.google.com/macros/s/AKfycbyKvSShMKj3LaXmkJo7HNwAta5UIWce87r9SzkePet74wnXNfZsLonb1FETXTxsl5cQ/exec',N='Smart Shopper';
+const WA='573124124034',WL=`https://wa.me/${WA}`,WEBHOOK='https://script.google.com/macros/s/AKfycbxFfEzCCcODwrV8rizmdyBLOV-WUALxwVdLNe9i7pRSG_xunNx-Dq0cZS5_LubDhIID/exec',N='Smart Shopper';
 const LOCS=['Usaquén','Chapinero','Santa Fe','San Cristóbal','Usme','Tunjuelito','Bosa','Kennedy','Fontibón','Engativá','Suba','Barrios Unidos','Teusaquillo','Los Mártires','Antonio Nariño','Puente Aranda','La Candelaria','Rafael Uribe Uribe','Ciudad Bolívar','Sumapaz','Otro municipio'];
 const HORS=['Mañana (8am–12pm)','Tarde (12pm–5pm)','Noche (5pm–8pm)','Lo antes posible','Acordar con domiciliario'];
 const CAT={
@@ -722,7 +722,7 @@ function bindE(){
     // Decrementar domicilios disponibles
     if((S.client.deliveries||0)>0)S.client.deliveries--;
     S.customers[S.client.phone]=S.client;await save(S.customers);
-    if(WEBHOOK){try{await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({timestamp:order.date,codigo:S.code,nombre:S.del.nombre,celular:S.client.phone,localidad:S.del.localidad,barrio:S.del.barrio,direccion:S.del.dir,apto:S.del.apto,referencia:S.del.ref,gps:S.del.mapsLink,horario:S.del.horario,nota:S.del.nota,productos:ci().map(([p,{qty,unit}])=>`${p}: ${qty} ${unit}`).join(' | '),total_items:cc(),domicilios_restantes:S.client.deliveries||0})});}catch(e){}}
+    if(WEBHOOK){try{await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({timestamp:order.date,codigo:S.code,nombre:S.del.nombre,celular:S.client.phone,localidad:S.del.localidad,barrio:S.del.barrio,direccion:S.del.dir,apto:S.del.apto,referencia:S.del.ref,gps:S.del.mapsLink,horario:S.del.horario,nota:S.del.nota,productos:ci().map(([p,{qty,unit}])=>`${p}: ${qty} ${unit}`).join(' | '),total_items:cc(),domicilios_restantes:S.client.deliveries||0})});}catch(e){}}
     S.sending=false;S.screen='success';render();
   };
 
