@@ -88,7 +88,7 @@ select.inp{appearance:none;background:white url("data:image/svg+xml,%3Csvg xmlns
 <body>
 <div id="app"><div class="loading"><div class="spinner"></div><span>Cargando Fresco a tu casa…</span></div></div>
 <script>
-const WA='573124124034',WL=`https://wa.me/${WA}`,WEBHOOK='https://script.google.com/macros/s/AKfycbw7moQ0WhyzvZe7Lru2dOuWZNkKPUKX8DFpoOD5J7q3q3Ll-MGKObYldCU2Wc-21Bgv/exec',N='Fresco a tu casa - CODABAS';
+const WA='573124124034',WL=`https://wa.me/${WA}`,WEBHOOK='https://script.google.com/macros/s/AKfycbwTUxSkRswgHYuSlFI46L-HOFF_gQImGyRcn98KXI2y_HG3TvJHhy7jLgQ9PQwnuzTn/exec',N='Fresco a tu casa - CODABAS';
 const LOCS=['Usaquén','Chapinero','Santa Fe','San Cristóbal','Usme','Tunjuelito','Bosa','Kennedy','Fontibón','Engativá','Suba','Barrios Unidos','Teusaquillo','Los Mártires','Antonio Nariño','Puente Aranda','La Candelaria','Rafael Uribe Uribe','Ciudad Bolívar','Sumapaz','Otro municipio'];
 const HORS=['Mañana (8am–12pm)','Tarde (12pm–5pm)','Noche (5pm–8pm)','Lo antes posible','Acordar con domiciliario'];
 const CAT={
@@ -805,27 +805,22 @@ function bindE(){
     if(WEBHOOK){
       try{
         const ctrl=new AbortController();
-        const tid=setTimeout(()=>ctrl.abort(),5000); // timeout 5 segundos
-        await fetch(WEBHOOK,{
-          method:'POST',
-          mode:'no-cors',
-          headers:{'Content-Type':'text/plain'},
-          signal:ctrl.signal,
-          body:JSON.stringify({
-            timestamp:order.date,codigo:S.code,
-            nombre:S.del.nombre,celular:S.client.phone,
-            localidad:S.del.localidad,barrio:S.del.barrio,
-            direccion:S.del.dir,apto:S.del.apto,
-            referencia:S.del.ref,gps:S.del.mapsLink,
-            horario:S.del.horario,nota:S.del.nota,
-            productos:productosSnap,
-            total_items:totalSnap,
-            domicilios_restantes:S.client.deliveries||0
-          })
+        const tid=setTimeout(()=>ctrl.abort(),5000);
+        const params=new URLSearchParams({
+          accion:'pedido',
+          timestamp:order.date,codigo:S.code,
+          nombre:S.del.nombre,celular:S.client.phone,
+          localidad:S.del.localidad,barrio:S.del.barrio,
+          direccion:S.del.dir,apto:S.del.apto||'',
+          referencia:S.del.ref||'',gps:S.del.mapsLink||'',
+          horario:S.del.horario||'',nota:S.del.nota||'',
+          productos:productosSnap,
+          total_items:totalSnap,
+          domicilios_restantes:S.client.deliveries||0
         });
+        await fetch(WEBHOOK+'?'+params.toString(),{signal:ctrl.signal});
         clearTimeout(tid);
       }catch(e){console.error('Webhook error:',e);}
-      finally{clearTimeout(tid);}
     }
     S.sending=false;
     S.screen='success';
