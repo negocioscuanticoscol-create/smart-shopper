@@ -285,14 +285,15 @@ function hdr({title='', sub='', back=false, client=false, code=''}={}){
       <div style="font-size:12px;color:rgba(255,255,255,.85);margin-top:1px">${S.client.phone}${S.del?.localidad?' · '+S.del.localidad:''}</div>
     </div>` : '';
   const codeBar = code ? `<div style="font-size:13px;color:rgba(255,255,255,.85);margin-top:6px">Código: <strong>#${code}</strong></div>` : '';
-  return `<div style="position:relative;overflow:hidden">
-    <img src="${HDR_IMG}" alt="Fresco a tu casa CODABAS" style="width:100%;display:block;object-fit:cover;object-position:center;height:200px">
-    <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,0) 40%,rgba(10,40,10,.75) 100%)"></div>
-    <div style="position:absolute;inset:0;padding:44px 18px 14px;display:flex;flex-direction:column;justify-content:flex-end">
-      ${back?'<button class="back-btn" id="bback" style="position:absolute;top:12px;left:18px">← Volver</button>':''}
-      ${title?`<div style="font-size:22px;font-weight:800;color:white;line-height:1.1;margin-top:6px">${title}</div>`:''}
-      ${clientBar}${codeBar}
+  return `<div style="background:linear-gradient(160deg,#1b4332,#2d6a4f)">
+    <div style="position:relative;overflow:hidden">
+      <img src="${HDR_IMG}" alt="Fresco a tu casa CODABAS" style="width:100%;display:block;object-fit:cover;object-position:center;height:180px">
+      ${back?'<button class="back-btn" id="bback" style="position:absolute;top:12px;left:18px;z-index:10">← Volver</button>':''}
     </div>
+    ${title||clientBar||codeBar?`<div style="padding:12px 18px 16px">
+      ${title?`<div style="font-size:22px;font-weight:800;color:white;line-height:1.1">${title}</div>`:''}
+      ${clientBar}${codeBar}
+    </div>`:''}
   </div>`;
 }
 
@@ -801,8 +802,8 @@ function bindE(){
     S.client.lastDelivery={...S.del};
     if((S.client.deliveries||0)>0)S.client.deliveries--;
     S.customers[S.client.phone]=S.client;
-    await save(S.customers);
-    // Enviar al chip — fire & forget, sin await para no bloquear la app
+    save(S.customers); // sin await — no bloquea
+    // Enviar al chip — fire & forget
     if(WEBHOOK){
       try{
         const params=new URLSearchParams({
@@ -820,6 +821,7 @@ function bindE(){
         fetch(WEBHOOK+'?'+params.toString()).catch(()=>{});
       }catch(e){}
     }
+    // Avanzar inmediatamente sin esperar nada
     S.sending=false;
     S.screen='success';
     render();
