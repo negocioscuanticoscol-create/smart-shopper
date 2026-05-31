@@ -806,7 +806,7 @@ function bindE(){
     if(WEBHOOK){
       try{
         const ctrl=new AbortController();
-        const tid=setTimeout(()=>ctrl.abort(),8000); // timeout 8 segundos
+        const tid=setTimeout(()=>ctrl.abort(),5000); // timeout 5 segundos
         await fetch(WEBHOOK,{
           method:'POST',
           headers:{'Content-Type':'application/json'},
@@ -824,7 +824,8 @@ function bindE(){
           })
         });
         clearTimeout(tid);
-      }catch(e){console.error('Webhook error:',e);} // continúa aunque falle
+      }catch(e){console.error('Webhook error:',e);}
+      finally{clearTimeout(tid);}
     }
     S.sending=false;
     S.screen='success';
