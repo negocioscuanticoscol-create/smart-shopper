@@ -792,36 +792,37 @@ function bindE(){
     S.sending=true;
     bc.disabled=true;
     bc.textContent='⏳ Enviando…';
-    S.code=gc();
-    // Capturar productos ANTES de cualquier render para evitar pérdida
-    const productosSnap=ci().map(([p,{qty,unit}])=>`${p}: ${qty} ${unit}`).join(' | ');
-    const itemsSnap=ci().map(([p,{qty,unit}])=>({product:p,qty,unit}));
-    const totalSnap=cc();
-    const order={date:new Date().toISOString(),code:S.code,items:itemsSnap,delivery:{...S.del}};
-    S.client.orders=[...(S.client.orders||[]),order];
-    S.client.lastDelivery={...S.del};
-    if((S.client.deliveries||0)>0)S.client.deliveries--;
-    S.customers[S.client.phone]=S.client;
-    save(S.customers); // sin await — no bloquea
-    // Enviar al chip — fire & forget
-    if(WEBHOOK){
-      try{
-        const params=new URLSearchParams({
-          accion:'pedido',
-          timestamp:order.date,codigo:S.code,
-          nombre:S.del.nombre,celular:S.client.phone,
-          localidad:S.del.localidad,barrio:S.del.barrio,
-          direccion:S.del.dir,apto:S.del.apto||'',
-          referencia:S.del.ref||'',gps:S.del.mapsLink||'',
-          horario:S.del.horario||'',nota:S.del.nota||'',
-          productos:productosSnap,
-          total_items:totalSnap,
-          domicilios_restantes:S.client.deliveries||0
-        });
-        fetch(WEBHOOK+'?'+params.toString()).catch(()=>{});
-      }catch(e){}
-    }
-    // Avanzar inmediatamente sin esperar nada
+    // Avanzar directo — sin lógica extra
+    try{
+      S.code=gc();
+      const productosSnap=ci().map(([p,{qty,unit}])=>`${p}: ${qty} ${unit}`).join(' | ');
+      const itemsSnap=ci().map(([p,{qty,unit}])=>({product:p,qty,unit}));
+      const totalSnap=cc();
+      const order={date:new Date().toISOString(),code:S.code,items:itemsSnap,delivery:{...S.del}};
+      if(S.client){
+        S.client.orders=[...(S.client.orders||[]),order];
+        S.client.lastDelivery={...S.del};
+        if((S.client.deliveries||0)>0)S.client.deliveries--;
+        S.customers[S.client.phone]=S.client;
+        try{save(S.customers);}catch(e){}
+      }
+      if(WEBHOOK){
+        try{
+          const params=new URLSearchParams({
+            accion:'pedido',timestamp:order.date,codigo:S.code,
+            nombre:S.del?.nombre||'',celular:S.client?.phone||'',
+            localidad:S.del?.localidad||'',barrio:S.del?.barrio||'',
+            direccion:S.del?.dir||'',apto:S.del?.apto||'',
+            referencia:S.del?.ref||'',gps:S.del?.mapsLink||'',
+            horario:S.del?.horario||'',nota:S.del?.nota||'',
+            productos:productosSnap,total_items:totalSnap,
+            domicilios_restantes:S.client?.deliveries||0
+          });
+          fetch(WEBHOOK+'?'+params.toString()).catch(()=>{});
+        }catch(e){}
+      }
+    }catch(err){console.error('Error en confirm:',err);}
+    // SIEMPRE avanzar a éxito
     S.sending=false;
     S.screen='success';
     render();
