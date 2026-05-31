@@ -802,10 +802,9 @@ function bindE(){
     if((S.client.deliveries||0)>0)S.client.deliveries--;
     S.customers[S.client.phone]=S.client;
     await save(S.customers);
+    // Enviar al chip — fire & forget, sin await para no bloquear la app
     if(WEBHOOK){
       try{
-        const ctrl=new AbortController();
-        const tid=setTimeout(()=>ctrl.abort(),5000);
         const params=new URLSearchParams({
           accion:'pedido',
           timestamp:order.date,codigo:S.code,
@@ -818,9 +817,8 @@ function bindE(){
           total_items:totalSnap,
           domicilios_restantes:S.client.deliveries||0
         });
-        await fetch(WEBHOOK+'?'+params.toString(),{signal:ctrl.signal});
-        clearTimeout(tid);
-      }catch(e){console.error('Webhook error:',e);}
+        fetch(WEBHOOK+'?'+params.toString()).catch(()=>{});
+      }catch(e){}
     }
     S.sending=false;
     S.screen='success';
