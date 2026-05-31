@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
 <meta name="theme-color" content="#1b4332">
-<title>Smart Shopper — Operaciones</title>
+<title>Fresco a tu casa - CODABAS · Operaciones</title>
 <style>
 :root{
   --gd:#1b4332;--gm:#2d6a4f;--gl:#40916c;--gp:#d8f3dc;--gs:#f0faf2;
@@ -27,8 +27,7 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,'SF Pro Display','Segoe UI',sans-serif;background:#f2f4f3;color:var(--tx);min-height:100vh}
 input,button,textarea,select{font-family:inherit}
-button{cursor:pointer;touch-action:manipulation}
-a,button,input,select,textarea{touch-action:manipulation}
+button{cursor:pointer}
 
 .topbar{background:linear-gradient(135deg,var(--gd),var(--gm));color:white;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
 .topbar-title{font-size:16px;font-weight:800}
@@ -129,15 +128,14 @@ a,button,input,select,textarea{touch-action:manipulation}
 
 <div class="topbar">
   <div>
-    <div class="topbar-title">🛒 Smart Shopper — Operaciones</div>
+    <div class="topbar-title">🛒 Fresco a tu casa - CODABAS · Operaciones</div>
     <div class="topbar-sub" id="top-sub">Cargando…</div>
   </div>
   <button class="refresh-badge" onclick="cargarPedidos()">🔄 Actualizar</button>
 </div>
 
 <div class="tab-bar" style="overflow-x:auto;scrollbar-width:none">
-  <button class="tab on" onclick="setTab('suscripciones')" id="tab-suscripciones" style="flex-shrink:0;color:#1565c0;border-bottom-color:#1565c0">💳 Suscripciones</button>
-  <button class="tab" onclick="setTab('pedidos')" id="tab-pedidos" style="flex-shrink:0">📋 Pedidos</button>
+  <button class="tab on" onclick="setTab('pedidos')" id="tab-pedidos" style="flex-shrink:0">📋 Pedidos</button>
   <button class="tab" onclick="setTab('entrega')" id="tab-entrega" style="flex-shrink:0">🚚 Entrega</button>
   <button class="tab" onclick="setTab('ventas')" id="tab-ventas" style="flex-shrink:0">💰 Ventas</button>
   <button class="tab" onclick="setTab('analisis')" id="tab-analisis" style="flex-shrink:0">📊 Análisis</button>
@@ -145,117 +143,11 @@ a,button,input,select,textarea{touch-action:manipulation}
   <button class="tab" onclick="setTab('config')" id="tab-config" style="flex-shrink:0">⚙️ Config</button>
 </div>
 
-<!-- SUSCRIPCIONES -->
-<div id="view-suscripciones" class="content">
-
-  <!-- COLA DE PENDIENTES -->
-  <div id="cola-pendientes" style="display:none;margin-bottom:12px">
-    <div style="background:#fff8e1;border:2px solid #f9a825;border-radius:12px;padding:14px">
-      <div style="font-weight:800;color:#f57f17;font-size:14px;margin-bottom:8px">⏳ Pendientes de activar</div>
-      <div id="cola-items"></div>
-    </div>
-  </div>
-
-  <!-- FORMULARIO ACTIVAR -->
-  <div class="sec" style="border:2px solid #1565c0;background:#e3f2fd">
-    <div class="sec-title" style="color:#0d47a1;font-size:15px">💳 Activar suscripción</div>
-    <p style="font-size:13px;color:#1565c0;margin-bottom:12px">Cuando el cliente envía el comprobante, verifica y activa aquí</p>
-
-    <div style="margin-bottom:10px">
-      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:4px">📱 Celular del cliente *</label>
-      <input class="inp" id="sus-cel" type="tel" placeholder="Ej: 3001234567" inputmode="numeric"
-        oninput="buscarClienteEnWA(this.value)">
-    </div>
-    <div style="margin-bottom:10px">
-      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:4px">👤 Nombre del cliente *</label>
-      <input class="inp" id="sus-nombre" type="text" placeholder="Nombre completo">
-    </div>
-
-    <!-- Verificar en WhatsApp -->
-    <div id="wa-verify-box" style="display:none;background:white;border-radius:10px;padding:10px 12px;margin-bottom:12px;border:1.5px solid #25d366">
-      <div style="font-size:12px;font-weight:700;color:#128c7e;margin-bottom:6px">📲 Verificar pago en WhatsApp</div>
-      <a id="wa-verify-link" href="#" target="_blank" class="btn btn-wa" style="font-size:13px;padding:10px;text-align:center;text-decoration:none;display:block">
-        💬 Ver mensaje de este cliente
-      </a>
-    </div>
-
-    <div style="margin-bottom:12px">
-      <label style="font-size:11px;font-weight:700;color:#0d47a1;display:block;margin-bottom:8px">📦 Plan contratado *</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
-        <div class="plan-opt" id="pla-unica" onclick="selPlanAdmin('unica',1,20000,'Solo 1 vez')">
-          <div class="po-label">Solo 1 vez</div>
-          <div class="po-price">$20.000</div>
-          <div class="po-envios">1 envío</div>
-        </div>
-        <div class="plan-opt" id="pla-mes1" onclick="selPlanAdmin('mes1',4,60000,'1 mes')">
-          <div class="po-label">1 mes</div>
-          <div class="po-price">$60.000</div>
-          <div class="po-envios">4 envíos</div>
-        </div>
-        <div class="plan-opt" id="pla-mes2" onclick="selPlanAdmin('mes2',8,100000,'2 meses')">
-          <div class="po-label">2 meses</div>
-          <div class="po-price">$100.000</div>
-          <div class="po-envios">8 envíos</div>
-        </div>
-        <div class="plan-opt" id="pla-mes3" onclick="selPlanAdmin('mes3',13,135000,'3 meses')" style="border-color:#f9a825">
-          <div class="po-label">3 meses ⭐</div>
-          <div class="po-price">$135.000</div>
-          <div class="po-envios">13 envíos</div>
-        </div>
-        <div class="plan-opt" id="pla-mes6" onclick="selPlanAdmin('mes6',27,240000,'6 meses')">
-          <div class="po-label">6 meses</div>
-          <div class="po-price">$240.000</div>
-          <div class="po-envios">27 envíos</div>
-        </div>
-        <div class="plan-opt" id="pla-ano1" onclick="selPlanAdmin('ano1',54,360000,'1 año')">
-          <div class="po-label">1 año 🏆</div>
-          <div class="po-price">$360.000</div>
-          <div class="po-envios">54 envíos</div>
-        </div>
-      </div>
-    </div>
-
-    <div style="background:white;border-radius:10px;padding:12px;margin-bottom:12px;border:1.5px solid #bbdefb;min-height:48px">
-      <div style="font-size:11px;color:#1565c0;font-weight:700;margin-bottom:3px">Resumen a activar:</div>
-      <div id="sus-resumen" style="font-size:14px;color:#333;font-weight:500">Selecciona un plan arriba</div>
-    </div>
-
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-o" onclick="agregarACola()" style="flex:1;font-size:13px">
-        ➕ Guardar en cola
-      </button>
-      <button class="btn" onclick="activarSuscripcion()"
-        style="flex:2;background:linear-gradient(135deg,#1565c0,#1976d2);color:white;font-weight:800">
-        ✅ Activar ahora
-      </button>
-    </div>
-  </div>
-
-  <!-- LISTADO SUSCRITOS -->
-  <div class="sec" style="margin-top:12px">
-    <div class="sec-title" style="display:flex;justify-content:space-between;align-items:center">
-      <span>📋 Clientes suscritos</span>
-      <button class="btn-sm" onclick="cargarListaSus()" style="background:var(--gp);color:var(--gd);border:none">🔄</button>
-    </div>
-    <div id="sus-lista"><div class="loading"><div class="spinner"></div></div></div>
-  </div>
-
-</div>
-<style>
-.plan-opt{border:2px solid #bbdefb;border-radius:10px;padding:10px 6px;text-align:center;cursor:pointer;background:white;transition:all .15s}
-.plan-opt.sel{border-color:#1565c0;background:#e3f2fd}
-.po-label{font-weight:700;font-size:12px;color:#0d47a1}
-.po-price{font-size:15px;font-weight:800;color:#1b4332;margin:2px 0}
-.po-envios{font-size:10px;color:#7a9e7e}
-</style>
-
-
 <!-- PEDIDOS -->
-<div id="view-pedidos" class="content" style="display:none">
+<div id="view-pedidos" class="content">
   <div class="filter-bar">
-    <button class="fpill on" onclick="setFiltro('activos',this)">🟢 Activos</button>
-    <button class="fpill" onclick="setFiltro('todos',this)">Todos</button>
-    <button class="fpill" onclick="setFiltro('Lista de compra',this)">⚪ Lista</button>
+    <button class="fpill on" onclick="setFiltro('todos',this)">Todos</button>
+    <button class="fpill" onclick="setFiltro('Lista de compra',this)">⚪ Lista de compra</button>
     <button class="fpill" onclick="setFiltro('Por consignación',this)">🟡 Por consig.</button>
     <button class="fpill" onclick="setFiltro('Pagado',this)">🟢 Pagado</button>
     <button class="fpill" onclick="setFiltro('Empacado',this)">🔵 Empacado</button>
@@ -384,12 +276,12 @@ a,button,input,select,textarea{touch-action:manipulation}
 
 <script>
 let WEBHOOK='', WA_NEG='573124124034';
-let pedidos=[], filtro='activos', pActual=null, checked={}, yapaChecked={};
+let pedidos=[], filtro='todos', pActual=null, checked={}, yapaChecked={};
 let autoRefreshTimer=null;
 
 // ── CONFIG ────────────────────────────────────
 function loadConfig(){
-  WEBHOOK=localStorage.getItem('ss_webhook')||'https://script.google.com/macros/s/AKfycbwwRWboHw9Nl18wqc0aVjesLur83LzWsrHHmHYUIHaavRE9-aUrtPpJDfI8GQM66A--/exec';
+  WEBHOOK=localStorage.getItem('ss_webhook')||'https://script.google.com/macros/s/AKfycbw7moQ0WhyzvZe7Lru2dOuWZNkKPUKX8DFpoOD5J7q3q3Ll-MGKObYldCU2Wc-21Bgv/exec';
   const wi=$('cfg-webhook');if(wi)wi.value=WEBHOOK;
 }
 function guardarConfig(){
@@ -401,166 +293,14 @@ const $=id=>document.getElementById(id);
 
 // ── TABS ──────────────────────────────────────
 function setTab(t){
-  ['suscripciones','pedidos','entrega','ventas','analisis','catalogo','config'].forEach(id=>{
-    const v=document.getElementById('view-'+id);
-    const tb=document.getElementById('tab-'+id);
-    if(v)v.style.display=id===t?'block':'none';
-    if(tb)tb.classList.toggle('on',id===t);
+  ['pedidos','entrega','ventas','analisis','catalogo','config'].forEach(id=>{
+    $('view-'+id).style.display=id===t?'block':'none';
+    $('tab-'+id).classList.toggle('on',id===t);
   });
-  if(t==='pedidos')cargarPedidos();
   if(t==='entrega')renderEntrega();
   if(t==='ventas')cargarVentas();
   if(t==='analisis')cargarAnalisis();
   if(t==='catalogo')cargarCatalogo();
-  if(t==='suscripciones')cargarListaSus();
-}
-
-// ── SUSCRIPCIONES ─────────────────────────────
-const PLANES_ADMIN=[
-  {id:'unica',label:'Solo 1 vez',precio:20000, meses:0, envios:1},
-  {id:'mes1', label:'1 mes',     precio:60000, meses:1, envios:4},
-  {id:'mes2', label:'2 meses',   precio:100000,meses:2, envios:8},
-  {id:'mes3', label:'3 meses',   precio:135000,meses:3, envios:13},
-  {id:'mes6', label:'6 meses',   precio:240000,meses:6, envios:27},
-  {id:'ano1', label:'1 año',     precio:360000,meses:12,envios:54}
-];
-let planSelAdmin=null;
-let colaActivar=[];
-
-function selPlanAdmin(id,envios,precio,label){
-  planSelAdmin={id,envios,precio,label};
-  document.querySelectorAll('.plan-opt').forEach(el=>el.classList.remove('sel'));
-  const el=document.getElementById('pla-'+id);if(el)el.classList.add('sel');
-  const res=document.getElementById('sus-resumen');
-  if(res)res.innerHTML=`<strong>${label}</strong> — $${precio.toLocaleString('es-CO')} — <strong>${envios} envío${envios>1?'s':''}</strong>`;
-}
-
-function buscarClienteEnWA(cel){
-  const clean=cel.replace(/\D/g,'');
-  const box=document.getElementById('wa-verify-box');
-  const link=document.getElementById('wa-verify-link');
-  if(clean.length>=7&&box&&link){
-    box.style.display='block';
-    link.href=`https://wa.me/57${clean}`;
-    link.textContent=`💬 Ver chat de ${clean} en WhatsApp`;
-  }else if(box){box.style.display='none';}
-}
-
-function limpiarFormSus(){
-  const cel=document.getElementById('sus-cel');if(cel)cel.value='';
-  const nom=document.getElementById('sus-nombre');if(nom)nom.value='';
-  const res=document.getElementById('sus-resumen');if(res)res.textContent='Selecciona un plan arriba';
-  const box=document.getElementById('wa-verify-box');if(box)box.style.display='none';
-  document.querySelectorAll('.plan-opt').forEach(el=>el.classList.remove('sel'));
-  planSelAdmin=null;
-}
-
-function validarFormSus(){
-  const cel=document.getElementById('sus-cel')?.value.trim().replace(/\D/g,'');
-  const nombre=document.getElementById('sus-nombre')?.value.trim();
-  if(!cel||cel.length<7){alert('Ingresa el celular del cliente');return null;}
-  if(!nombre){alert('Ingresa el nombre del cliente');return null;}
-  if(!planSelAdmin){alert('Selecciona un plan');return null;}
-  return{cel,nombre,plan:planSelAdmin};
-}
-
-function agregarACola(){
-  const v=validarFormSus();if(!v)return;
-  colaActivar.push({...v,ts:new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})});
-  renderCola();limpiarFormSus();
-}
-
-function renderCola(){
-  const box=document.getElementById('cola-pendientes');
-  const items=document.getElementById('cola-items');
-  if(!box||!items)return;
-  if(!colaActivar.length){box.style.display='none';return;}
-  box.style.display='block';
-  items.innerHTML=colaActivar.map((c,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #ffe082">
-      <div style="flex:1;font-size:13px">
-        <strong>${c.nombre}</strong> · 📱${c.cel}<br>
-        <span style="color:#f57f17">${c.plan.label} — $${c.plan.precio.toLocaleString('es-CO')} — ${c.plan.envios} envíos</span>
-        <span style="color:#bbb;font-size:11px"> · ${c.ts}</span>
-      </div>
-      <a href="https://wa.me/57${c.cel}" target="_blank" style="background:#25d366;color:white;border-radius:6px;padding:5px 8px;font-size:14px;text-decoration:none">💬</a>
-      <button onclick="activarDeCola(${i})" style="background:#43a047;color:white;border:none;border-radius:8px;padding:6px 10px;font-weight:700;font-size:12px;cursor:pointer">✅</button>
-      <button onclick="quitarDeCola(${i})" style="background:#e57373;color:white;border:none;border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer">✕</button>
-    </div>`).join('')+
-    (colaActivar.length>1?`<button onclick="activarTodaCola()" class="btn btn-g" style="margin-top:10px;font-size:13px">⚡ Activar todos (${colaActivar.length})</button>`:'');
-}
-
-function quitarDeCola(i){colaActivar.splice(i,1);renderCola();}
-
-async function activarDeCola(i){
-  const c=colaActivar[i];
-  const ok=await activarEnSheet(c.cel,c.nombre,c.plan);
-  if(ok){colaActivar.splice(i,1);renderCola();cargarListaSus();}
-}
-
-async function activarTodaCola(){
-  for(let i=colaActivar.length-1;i>=0;i--){
-    const c=colaActivar[i];
-    if(await activarEnSheet(c.cel,c.nombre,c.plan))colaActivar.splice(i,1);
-  }
-  renderCola();cargarListaSus();alert('✅ Todos activados');
-}
-
-async function activarSuscripcion(){
-  const v=validarFormSus();if(!v)return;
-  if(await activarEnSheet(v.cel,v.nombre,v.plan)){limpiarFormSus();cargarListaSus();}
-}
-
-async function activarEnSheet(cel,nombre,plan){
-  if(!WEBHOOK){alert(`✅ (Demo) ${plan.envios} domicilios para ${nombre} — ${cel}`);return true;}
-  try{
-    const fr=document.getElementById('ss_fr')||crearFr();
-    const fm=document.createElement('form');
-    fm.method='GET';fm.action=WEBHOOK;fm.target='ss_fr';fm.style.display='none';
-    const a=(k,v)=>{const i=document.createElement('input');i.type='hidden';i.name=k;i.value=v;fm.appendChild(i);};
-    a('accion','nuevaSuscripcion');a('celular',cel);a('nombre',nombre);
-    a('plan',plan.label);a('valor',String(plan.precio));
-    a('envios',String(plan.envios));a('meses',String(plan.meses));
-    a('fechaPago',new Date().toISOString());
-    document.body.appendChild(fm);fm.submit();
-    setTimeout(()=>{try{document.body.removeChild(fm);}catch(e){}},3000);
-    alert(`✅ Activado!\n👤 ${nombre} — ${cel}\n📦 ${plan.label} — ${plan.envios} envíos`);
-    return true;
-  }catch(err){alert('Error: '+err.message);return false;}
-}
-function crearFr(){
-  const fr=document.createElement('iframe');
-  fr.name='ss_fr';fr.id='ss_fr';
-  fr.style.cssText='display:none;width:0;height:0;border:none;position:absolute;left:-9999px';
-  document.body.appendChild(fr);return fr;
-}
-
-async function cargarListaSus(){
-  const lista=document.getElementById('sus-lista');if(!lista)return;
-  if(!WEBHOOK){lista.innerHTML='<div style="text-align:center;padding:14px;font-size:13px;color:var(--tl)">Configura el webhook en ⚙️ Config</div>';return;}
-  lista.innerHTML='<div class="loading"><div class="spinner"></div></div>';
-  try{
-    const r=await fetch(WEBHOOK+'?accion=suscripciones');
-    const d=await r.json();
-    const subs=d.suscripciones||[];
-    if(!subs.length){lista.innerHTML='<div class="empty">Sin suscripciones aún</div>';return;}
-    lista.innerHTML=subs.map(s=>{
-      const dom=Number(s.domRestantes)||0;
-      return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gp)">
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:14px">${s.nombre}</div>
-          <div style="font-size:12px;color:var(--tm)">📱 ${s.celular} · <span style="color:#1565c0">${s.plan||'—'}</span></div>
-          <div style="font-size:11px;color:var(--tl)">Vence: ${s.vence||'N/A'}</div>
-        </div>
-        <div style="text-align:center;min-width:44px">
-          <div style="font-size:22px;font-weight:800;color:${dom>0?'var(--gl)':'#e57373'}">${dom}</div>
-          <div style="font-size:10px;color:var(--tl)">envíos</div>
-        </div>
-        <a href="https://wa.me/57${s.celular}" target="_blank"
-          style="background:#25d366;color:white;border-radius:8px;padding:6px 10px;font-size:18px;text-decoration:none">💬</a>
-      </div>`;
-    }).join('');
-  }catch(e){lista.innerHTML=`<div class="empty">⚠️ ${e.message}</div>`;}
 }
 
 // ── FILTRO ────────────────────────────────────
@@ -568,19 +308,6 @@ function setFiltro(f,btn){
   filtro=f;
   document.querySelectorAll('.fpill').forEach(b=>b.classList.toggle('on',b===btn));
   renderLista();
-}
-
-
-// Helper: split productos string regardless of separator
-function splitProds(str) {
-  if(!str) return [];
-  if(str.indexOf(' | ')>-1) return str.split(' | ').map(s=>s.trim()).filter(Boolean);
-  if(str.indexOf('|')>-1) return str.split('|').map(s=>s.trim()).filter(Boolean);
-  if(str.indexOf(';;;')>-1) return str.split(';;;').map(p=>{
-    const parts=p.split('::');
-    return parts.length>=3?parts[0]+': '+parts[1]+' '+parts[2]:p;
-  }).filter(Boolean);
-  return [str];
 }
 
 // ── COLORES POR ESTADO ────────────────────────
@@ -629,12 +356,7 @@ async function cargarPedidos(){
 // ── LISTA (agrupada por localidad) ────────────
 function renderLista(){
   const lista=$('lista-pedidos');
-  const ESTADOS_ACTIVOS=['Lista de compra','Por consignación','Pagado','Empacado'];
-  const filtrados=pedidos.filter(p=>{
-    if(filtro==='activos') return ESTADOS_ACTIVOS.includes(p.estado);
-    if(filtro==='todos') return true;
-    return p.estado===filtro;
-  });
+  const filtrados=pedidos.filter(p=>filtro==='todos'||p.estado===filtro);
   if(!filtrados.length){lista.innerHTML='<div class="empty">No hay pedidos en esta categoría</div>';return;}
 
   // Agrupar por localidad
@@ -687,7 +409,7 @@ function renderEntrega(){
         ${p.gps?`<a href="${p.gps}" target="_blank" style="font-size:12px;color:var(--gl);font-weight:700;text-decoration:none">🗺️ GPS</a>`:''}
         <div style="font-size:12px;color:var(--tm)">🕐 ${p.horario||'Sin horario'}</div>
         <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--gp)">
-          ${splitProds(p.productos).map(pr=>`<div style="font-size:12px">• ${pr.trim()}</div>`).join('')}
+          ${p.productos.split('|').map(pr=>`<div style="font-size:12px">• ${pr.trim()}</div>`).join('')}
         </div>
         ${p.yapa?`<div style="background:#fff8e1;border-radius:6px;padding:6px 8px;margin-top:6px;font-size:12px;color:#7c6000">🎁 Yapa: ${p.yapa}</div>`:''}
         <div style="margin-top:8px;font-size:12px;color:var(--tl)">Entrega confirmada: ☐ &nbsp;&nbsp; Firma: ___________</div>
@@ -706,7 +428,7 @@ function abrirPedido(codigo){
   $('p-nombre').textContent=p.nombre;
   $('p-tel').textContent='📱 '+p.celular+' · '+p.localidad;
 
-  const prods=splitProds(p.productos);
+  const prods=p.productos.split('|').map(pr=>pr.trim()).filter(Boolean);
   const yapaActual=(p.yapa||'').split(',').map(s=>s.trim()).filter(Boolean);
 
   // Pre-marcar yapa existente
@@ -780,7 +502,7 @@ function abrirPedido(codigo){
     <div class="sec">
       <div class="sec-title">📸 Tarjeta resumen (fotografía y envía)</div>
       <div class="summary-card" id="sc">
-        <div style="font-size:10px;opacity:.65;letter-spacing:1.5px;text-transform:uppercase">Smart Shopper · #${p.codigo}</div>
+        <div style="font-size:10px;opacity:.65;letter-spacing:1.5px;text-transform:uppercase">Fresco a tu casa · #${p.codigo}</div>
         <div style="font-size:17px;font-weight:800;margin:3px 0">${p.nombre}</div>
         <div style="font-size:12px;opacity:.8;margin-bottom:10px">📍 ${p.barrio}, ${p.localidad}</div>
         ${prods.map(pr=>`<div class="sc-prod"><span>${pr.split(':')[0]}</span><span style="font-weight:700">${(pr.split(':')[1]||'').trim()}</span></div>`).join('')}
@@ -818,8 +540,8 @@ function toggleChk(i,prod){
   if(checked[i]){chk.classList.add('done');chk.textContent='✓';lbl.classList.add('done');}
   else{chk.classList.remove('done');chk.textContent='';lbl.classList.remove('done');}
   const done=Object.values(checked).filter(Boolean).length;
-  const total=Object.keys(checked).length||splitProds(pActual.productos).length;
-  $('chk-prog').textContent=`${done} / ${splitProds(pActual.productos).length} revisados`;
+  const total=Object.keys(checked).length||pActual.productos.split('|').length;
+  $('chk-prog').textContent=`${done} / ${pActual.productos.split('|').length} revisados`;
 }
 
 // Yapa toggle
@@ -833,7 +555,7 @@ function toggleYapa(i,prod){
   actualizarWALink();
 }
 function actualizarYapaResumen(){
-  const prods=splitProds(pActual.productos).map(pr=>pr.split(':')[0].trim());
+  const prods=pActual.productos.split('|').map(pr=>pr.split(':')[0].trim());
   const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>prods[i]).filter(Boolean);
   const res=$('yapa-resumen'),txt=$('yapa-txt');
   if(res&&txt){res.style.display=sel.length?'block':'none';txt.textContent=sel.join(', ');}
@@ -843,7 +565,7 @@ function actualizarSummaryCard(){
   const scv=$('sc-valor');if(scv)scv.textContent=valor?fmt$(valor):'Por confirmar';
   const inp=$('inp-valor');if(inp)inp.style.borderColor=valor?'var(--gl)':'var(--br)';
   // Yapa en la tarjeta
-  const prods=splitProds(pActual.productos).map(pr=>pr.split(':')[0].trim());
+  const prods=pActual.productos.split('|').map(pr=>pr.split(':')[0].trim());
   const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>prods[i]).filter(Boolean);
   const scy=$('sc-yapa');
   if(scy)scy.innerHTML=sel.length?`<div style="margin-top:8px;background:rgba(255,255,255,.15);border-radius:7px;padding:7px 9px;font-size:12px">🎁 Yapa: ${sel.join(', ')}</div>`:'';
@@ -852,8 +574,8 @@ function actualizarSummaryCard(){
 function actualizarWALink(){
   if(!pActual)return;
   const p=pActual;
-  const prods=splitProds(p.productos);
-  const ypaProds=splitProds(p.productos).map(pr=>pr.split(':')[0].trim());
+  const prods=p.productos.split('|').map(pr=>pr.trim()).filter(Boolean);
+  const ypaProds=p.productos.split('|').map(pr=>pr.split(':')[0].trim());
   const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>ypaProds[i]).filter(Boolean);
   const valor=$('inp-valor')?.value||'';
   const msg=encodeURIComponent([
@@ -864,7 +586,7 @@ function actualizarWALink(){
     `💰 *Total a pagar:* ${valor?fmt$(valor):'Te lo confirmamos pronto'}`,``,
     `📍 ${p.direccion}${p.apto?' · '+p.apto:''}, ${p.barrio}`,
     `🕐 ${p.horario||''}`,``,
-    `_Smart Shopper — Mercado inteligente, fresco y saludable_ 🌿`
+    `_Fresco a tu casa - CODABAS_ 🏡 🌿`
   ].filter(Boolean).join('\n'));
   const btn=$('btn-wa-cli');
   if(btn)btn.href=`https://wa.me/${p.celular}?text=${msg}`;
@@ -878,7 +600,7 @@ function cambiarEstado(es){
 
 async function guardarCambios(){
   if(!pActual)return;
-  const prods=splitProds(pActual.productos).map(pr=>pr.split(':')[0].trim());
+  const prods=pActual.productos.split('|').map(pr=>pr.split(':')[0].trim());
   const sel=Object.entries(yapaChecked).filter(([,v])=>v).map(([i])=>prods[i]).filter(Boolean);
   const valor=$('inp-valor')?.value||'';
   const yapa=sel.join(', ');
@@ -887,17 +609,13 @@ async function guardarCambios(){
   const idx=pedidos.findIndex(p=>p.codigo===pActual.codigo);
   if(idx>=0)pedidos[idx]={...pActual};
   if(WEBHOOK){
-    const fr=document.getElementById('ss_fr')||crearFr();
-    const fm=document.createElement('form');
-    fm.method='GET';fm.action=WEBHOOK;fm.target='ss_fr';fm.style.display='none';
-    const a=(k,v)=>{const i=document.createElement('input');i.type='hidden';i.name=k;i.value=v;fm.appendChild(i);};
-    a('accion','actualizarPedido');a('codigo',pActual.codigo);
-    a('estado',pActual.estado);a('valor',valor);a('yapa',yapa);a('celular',pActual.celular);
-    document.body.appendChild(fm);fm.submit();
-    setTimeout(()=>{try{document.body.removeChild(fm);}catch(e){}},3000);
+    try{
+      await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({accion:'actualizar',codigo:pActual.codigo,estado:pActual.estado,valor,yapa,celular:pActual.celular})});
+    }catch(e){console.warn('Error sheets:',e);}
   }
   cerrarPanel();
-  renderLista();
+  renderLista(); // Vuelve al listado actualizado
 }
 
 async function activarDomicilios(){
@@ -905,7 +623,7 @@ async function activarDomicilios(){
   if(!cel||!cant){alert('Completa celular y cantidad');return;}
   if(!WEBHOOK){alert('Configura el webhook primero');return;}
   try{
-    await fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+    await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({accion:'actualizar',codigo:'manual',estado:'Pagado',celular:cel,domicilios:Number(cant)})});
     alert(`✅ ${cant} domicilios activados para ${cel}`);
     $('dom-cel').value='';$('dom-cant').value='';
@@ -957,7 +675,7 @@ async function guardarComision(){
   const cod=$('com-codigo').value.trim(),val=$('com-valor').value.trim();
   if(!cod||!val){alert('Completa código y valor');return;}
   if(!WEBHOOK){alert('Configura el webhook');return;}
-  await fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+  await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({accion:'actualizar',codigo:cod,comision:Number(val)})});
   alert('✅ Comisión guardada');
   $('com-codigo').value='';$('com-valor').value='';
@@ -1034,7 +752,7 @@ async function agregarProducto(){
   if(!nombre){alert('Escribe el nombre del producto');return;}
   if(!WEBHOOK){alert('Configura el webhook. El producto se agrega en la pestaña Catálogo del Sheet.');return;}
   try{
-    await fetch(WEBHOOK,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+    await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({accion:'agregarProducto',nombre,categoria:cat,tipo:tipoNuevo})});
     alert(`✅ "${nombre}" agregado. Aparecerá en la app al recargar.`);
     $('cat-nombre').value='';
@@ -1049,7 +767,7 @@ function startAutoRefresh(){
 }
 
 loadConfig();
-cargarListaSus();
+cargarPedidos();
 startAutoRefresh();
 </script>
 </body>
