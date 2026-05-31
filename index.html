@@ -679,7 +679,7 @@ function bindE(){
           const local=S.customers[p]||{};
           S.client={...local,...d.cliente,phone:p,orders:local.orders||[]};
           S.customers[p]=S.client;
-          await save(S.customers);
+          save(S.customers);;
         }
       }catch(e){
         console.warn('No se pudo consultar servidor:',e);
@@ -847,7 +847,7 @@ function bindE(){
 async function cargarCatalogoApp(){
   if(!WEBHOOK)return;
   try{
-    const r=await fetch(WEBHOOK+'?accion=catalogo');
+    const r=fetch(WEBHOOK+'?accion=catalogo');
     const d=await r.json();
     if(d.catalogo&&Object.keys(d.catalogo).length){
       Object.keys(CAT).forEach(k=>delete CAT[k]);
